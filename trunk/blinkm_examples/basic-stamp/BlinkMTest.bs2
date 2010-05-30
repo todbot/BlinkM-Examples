@@ -1,0 +1,147 @@
+' {$STAMP BS2}
+' {$PBASIC 2.5}
+
+' BlinkMTest.bs2 
+' --------------
+' Send commands to a BlinkM with a Basic Stamp 2 (BS2)
+' The BS2p and greater Basic Stamps have I2C interfaces in hardware.
+' Most people have the regular BS2, which does not.  This program
+' is a simple I2C master for BS2 able to send commands to BlinkMs, 
+' see http://blinkm.thingm.com/ for more info about BlinkMs.
+'
+' To use this program, wire up the BlinkM to Power (+5v, aka Vdd) and 
+' ground (0v, aka Vss), connect the I2c 'd'ata and 'c'lock pins to 
+' the two BS2 pins you want to use as the I2C bus. In the BlinkM datasheet,
+' pins 0 & 1 are used, in this program, pins 15 & 14 are used.
+' Also be sure to wire two 4.7k "pullup" resistors from those pins to +5v.
+'
+' This program demonstrates two procedures: "BlinkMCmd" and "BlinkMCmd3".
+' "BlinkMCmd" is used to data-less commands (like 'o') to BlinkM.
+' "BlinkMCmd3" is used to send commands that have 3 data values (most commands)
+'
+' 2008, Tod E. Kurt, http://thingm.com/
+'
+' BS2 I2C code adapted from: 
+'             "Bit Bashing I2C on a BS2"
+'             http://www.lennard.net.nz/electronics/i2c.html
+' also see:   http://www.matrixorbital.ca/appnotes/i2c/I2C_BS
+'
+
+
+'What pins BlinkM is connected to, with 4.7k or 10k pullup resistors to +5V
+SDA CON 15 ' I2C Data line
+SCL CON 14 ' I2C Clock line
+SDA_DIR VAR DIR15  ' must match SDA above, 0 is IN, 1 is OUT
+
+BlinkM_addr CON 9  ' or set to zero to address all BlinkMs on your I2C bus
+
+
+'VARIABLES
+i2c_ack VAR BIT       ' used by I2CSend, acknowledge from the I2C bus
+I2C_data VAR BYTE     ' used by I2CSend, Data to/from the I2C bus
+BlinkM_cmd  VAR BYTE  ' used by BlinkMSend & BlinkMSend3
+BlinkM_dat1 VAR BYTE  ' used by BlinkMSend3 
+BlinkM_dat2 VAR BYTE  ' used by BlinkMSend3
+BlinkM_dat3 VAR BYTE  ' used by BlinkMSend3
+
+hueNum VAR BYTE
+
+Main:
+DEBUG "Welcome to BlinkMTest"
+
+BlinkM_cmd = "o"  ' stop playing boot script, e.g. "{'o'}"
+GOSUB BlinkMCmd
+
+BlinkM_cmd = "p"  ' play white pulse script, e.g. "{'p',2,0,0}"
+BlinkM_dat1 = 2
+BlinkM_dat2 = 0
+BlinkM_dat3 = 0
+GOSUB BlinkMCmd3
+PAUSE 1000        ' pause for effect
+
+BlinkM_cmd = "o"  ' stop playing script, e.g. "{'o'}"
+GOSUB BlinkMCmd
+
+' set up fade to HSB command for MainLoop
+BlinkM_cmd = "h"  ' fade to HSB command, e.g. "{'h', hue, 255,255}"
+BlinkM_dat2 = 255 ' max saturation
+BlinkM_dat3 = 255 ' max brightness
+
+MainLoop:
+DEBUG CR,"Enter a hue number (1-9): "
+DEBUGIN DEC1 hueNum   ' read from the serial debug input
+hueNum = hueNum * 28  ' scale to hue range of 0-255 (approximately)
+BlinkM_dat1 = hueNum  ' set the hue
+GOSUB BlinkMCmd3      ' send the hue command off
+
+GOTO MainLoop
+
+END
+
+
+
+'^^^^^^^^^^^^^^ BLINKM SUBROUTINES ^^^^^^^^^^^^^^
+BlinkMCmd:
+GOSUB I2CStart
+I2C_data = BlinkM_addr << 1 ' shift left because address is upper 7 bits
+GOSUB I2CSend
+I2C_data = BlinkM_cmd
+GOSUB I2CSend
+GOSUB I2CStop
+PAUSE 1
+RETURN
+
+BlinkMCmd3:
+GOSUB I2CStart
+I2C_data = BlinkM_addr << 1 ' shift left because address is upper 7 bits
+GOSUB I2CSend
+I2C_data = BlinkM_cmd
+GOSUB I2CSend
+I2C_data = BlinkM_dat1
+GOSUB I2CSend
+I2C_data = BlinkM_dat2
+GOSUB I2CSend
+I2C_data = BlinkM_dat3
+GOSUB I2CSend
+GOSUB I2CStop
+PAUSE 1
+RETURN
+'^^^^^^^^^^^^^^ BLINKM SUBROUTINES ^^^^^^^^^^^^^^
+
+'^^^^^^^^^^^^^^ I2C SUBROUTINES ^^^^^^^^^^^^^^
+'Start Procedure. Set start condition on bus: SDA Hi-Lo while SCL Hi
+I2CStart:
+SDA_DIR = %1 ' make it an output
+HIGH SDA
+HIGH SCL
+LOW SDA
+LOW SCL
+RETURN
+
+'Stop Procedure. Set stop condition on bus: SDA Lo-Hi while SCL Hi
+I2CStop:
+LOW SDA
+HIGH SCL
+HIGH SDA
+RETURN
+
+'Send Address or Data Procedure
+' (very bare bones)
+I2CSend:
+SHIFTOUT SDA, SCL, MSBFIRST, [I2C_data]
+'Check for Receiver Acknowledge
+RX_ACK:
+HIGH SDA
+SDA_DIR = %0  ' make it an input
+HIGH SCL
+'i2c_ack = SDA_IN  'FIXME:
+LOW SCL
+SDA_DIR = %1  ' make it an output again
+'if i2c_ack = 1 then indicate_NO_ACK
+'debug "Acknowledged", 13
+'RETURN
+'indicate_NO_ACK:
+' debug "NO Acknowledge", 13
+RETURN
+'^^^^^^^^^^^^^^ I2C SUBROUTINES ^^^^^^^^^^^^^^
+

@@ -1,0 +1,17 @@
+BlinkM Firmware License Agreement
+
+	* By downloading, installing, or using this firmware, you agree to be bound by the terms and conditions of the following license agreement. Please read this agreement carefully.
+
+	* ThingM Corporation. ("ThingM") grants you a limited, non-exclusive license to use the BlinkM firmware ("Firmware") in binary executable form in the normal operation of the applicable ThingM products. Title, ownership rights, and intellectual property rights in and to the Firmware remain in ThingM.  This license is personal to you and you may make copies of the Firmware only for your personal use. You agree that this license agreement does not need to be signed for it to take effect.
+
+	* The Firmware is provided on an "as is" basis without warranty of any kind -- either expressed or implied -- including, without limitation, any implied warranties of merchantability or fitness for a particular purpose. ThingM does not warrant the performance of the Firmware or that the Firmware will meet your requirements or operate without errors.
+
+	* You acknowledge that this Firmware is the property of ThingM and is protected under United States of America copyright laws and international copyright treaties. You further acknowledge that the structure, organization, and code of the Firmware are valuable trade secrets of ThingM and that the Firmware in source code form remains a valuable trade secret of ThingM Corporation.  You agree not to decompile, disassemble, modify, reverse assemble, reverse engineer, or reduce to human readable form the Firmware or any part thereof or create any derivative works based on the Firmware.
+
+	* You agree not to export or re-export the Firmware to any country in violation of the export control laws of the United States of America.
+
+BlinkM Device License
+
+	* Supply of this product only conveys a license for non-commercial use only. Non-commercial use is defined as using this product for your own personal use and not for internal business operations or revenue generation purposes.
+
+	* ThingM Corporation assumes no responsibility or liability for the use of any of its products, conveys no license or title under any patent, copyright or mask work rights to these products, and makes no representations or warranties that these products are free from patent, copyright or mask work infringement, unless otherwise specified.
