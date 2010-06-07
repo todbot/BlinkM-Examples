@@ -15,13 +15,10 @@ SRC_ZIP="$NAME$VERSION-src.zip"
 WIN_ZIP="$NAME-win.zip"
 MAC_ZIP="$NAME-mac.zip"
 COMMUNICATOR_ZIP="BlinkMCommunicator.zip"
-EXAMPLES_ZIP="BlinkM_Examples.zip"
+EXAMPLES_ZIP="blinkm_examples.zip"
 SCRIPTTOOL_ZIP="BlinkMScriptTool.zip"
 
 SCRIPTTOOL_BASEDIR="BlinkMScriptTool"
-
-EXAMPLES="arduino processing basic-stamp max-msp"
-#EXAMPLES="BlinkMCommunicator BlinkMTester BlinkMMulti BlinkMScriptWriter BlinkMScriptWriter2 BlinkMChuck BlinkMCylon BlinkMColorFader BlinkMColorList BlinkMScriptTool BlinkMKnobHue BlinkMKnock BlinkMFactoryReset BlinkMFlash BlinkMTinyToy docs other-examples"
 
 RXTXDIR="rxtx-arduino"
 
@@ -65,6 +62,23 @@ cat << EOF
 EOF
     exit 0
 fi
+
+if [ "$cmd" == "examples" ] || [ "$cmd" == "all" ]; then
+    echo "Making example code zip file"
+    pushd ../..
+    echo "removing old $EXAMPLES_ZIP"
+    rm -f $EXAMPLES_ZIP
+    echo "creating new $EXAMPLES_ZIP"
+    zip -r $EXAMPLES_ZIP blinkm_examples -x \*.svn\* -x \*DS_Store\* -x \*~ -x \*applet\* -x \*bundling-tools\*
+    popd
+    echo "$EXAMPLES_ZIP done"
+fi
+
+
+
+#########################################
+# everything else here doesn't quite work
+#
 
 if [ "$cmd" == "rxtx" ] || [ "$cmd" == "all" ]; then
     echo "Updating RXTX jar to work like Arduino's RXTX"
@@ -118,16 +132,6 @@ if [ "$cmd" == "communicator" ] || [ "$cmd" == "all" ]; then
     echo "$COMMUNICATOR_ZIP done"
 fi
 
-if [ "$cmd" == "examples" ] || [ "$cmd" == "all" ]; then
-    echo "Making example code zip file"
-    pushd $BASEDIR
-    echo "removing old $EXAMPLES_ZIP"
-    rm $EXAMPLES_ZIP
-    echo "creating new $EXAMPLES_ZIP"
-    zip -r $EXAMPLES_ZIP $EXAMPLES -x \*.svn\* -x \*DS_Store\* -x \*~ -x \*applet\*
-    popd
-    echo "$EXAMPLES_ZIP done"
-fi
 if [ "$cmd" == "scripttool" ] || [ "$cmd" == "all" ]; then
     echo "Making scripttool zip file"
     pushd $BASEDIR
