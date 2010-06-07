@@ -20,6 +20,7 @@
  *             added test script read/write functions, cleaned up some functions
  *  20090121 - added I2C bus scan functions, has dependencies on private 
  *             functions inside Wire library, so might break in the future
+ *  20100420 - added BlinkM_startPower and _stopPower
  *
  */
 
@@ -30,6 +31,7 @@
 extern "C" { 
 #include "utility/twi.h"  // from Wire library, so we can do bus scanning
 }
+
 
 // format of light script lines: duration, command, arg1,arg2,arg3
 typedef struct _blinkm_script_line {
@@ -68,8 +70,6 @@ static void BlinkM_scanI2CBus(byte from, byte to,
   }
 }
 
-//    Serial.print("addr: "); Serial.print(a,HEX);
-//    Serial.print(", rc:"); Serial.println(rc,HEX);
 //
 //
 static int8_t BlinkM_findFirstI2CDevice() 
@@ -83,17 +83,38 @@ static int8_t BlinkM_findFirstI2CDevice()
   return -1; // no device found in range given
 }
 
-// General version of BlinkM_beginWithPower().
-// Call this first when BlinkM is plugged directly into Arduino
 // FIXME: make this more Arduino-like
-static void BlinkM_beginWithPowerPins(byte pwrpin, byte gndpin)
+static void BlinkM_startPowerWithPins(byte pwrpin, byte gndpin)
 {
   DDRC |= _BV(pwrpin) | _BV(gndpin);  // make outputs
   PORTC &=~ _BV(gndpin);
   PORTC |=  _BV(pwrpin);
+}
 
+// FIXME: make this more Arduino-like
+static void BlinkM_stopPowerWithPins(byte pwrpin, byte gndpin)
+{
+  DDRC &=~ (_BV(pwrpin) | _BV(gndpin));
+}
+
+//
+static void BlinkM_startPower()
+{
+  BlinkM_startPowerWithPins( PORTC3, PORTC2 );
+}
+
+//
+static void BlinkM_stopPower()
+{
+  BlinkM_stopPowerWithPins( PORTC3, PORTC2 );
+}
+
+// General version of BlinkM_beginWithPower().
+// Call this first when BlinkM is plugged directly into Arduino
+static void BlinkM_beginWithPowerPins(byte pwrpin, byte gndpin)
+{
+  BlinkM_startPowerWithPins(pwrpin,gndpin);
   delay(100);  // wait for things to stabilize
-
   Wire.begin();
 }
 
