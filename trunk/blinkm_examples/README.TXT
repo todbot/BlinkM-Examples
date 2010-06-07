@@ -1,29 +1,40 @@
 
 BlinkM Example Code   
 ===================
--- 20081101 -- Tod E. Kurt, http://thingm.com/
+-- 20100701 -- Tod E. Kurt, http://thingm.com/
 
-This zip file "BlinkM_Examples.zip" available from http://blinkm.thingm.com 
+This zip file "blinkm_examples.zip" available from 
+http://blinkm-projects.google.com and http://blinkm.thingm.com 
 contains several examples of how to talk with BlinkMs.  It will be updated 
 periodically as new examples are created.  If you have an interesting example
 you would like added to this example set, contact me.
-
-Note: in general, the examples will reset the I2C address of the BlinkM 
-      to 0x10.  If you don't want this behavior, comment out the 
-      "BlinkM_setAddress()" line in setup() and change the variable 
-      "blinkm_addr" to match your BlinkM's address.
 
 
 Arduino Examples
 ----------------
 - BlinkMCommunicator 
   - A simple serial-to-i2c gateway for PC controlling of BlinkM, 
-    like via Processing or BlinkM Sequencer
+    like via Processing or BlinkMSequencer
 
 - BlinkMTester
   - A general utility tool to play with a single BlinkM
     Also contains the official version of "BlinkM_funcs.h", 
     the Arduino BlinkM library.
+
+- BlinkMFactoryReset
+  - Restore the BlinkM's startup behavior to default
+
+- BlinkMSetStartupScript
+  - Change what startup script the BlinkM will play
+
+- BlinkMSensor0
+  - Control one parameter of a BlinkM with a single sensor
+
+- BlinkMColorFader
+  - Show how to control a BlinkM from Arduino with potentiometers
+
+- BlinkMColorList
+  - Write a startup light script with user-definable colors
 
 - BlinkMMulti
   - A simple example showing how to communicate with multiple BlinkMs
@@ -40,11 +51,9 @@ Arduino Examples
 - BlinkMCylon
   - Control a bus of 13 BlinkMs to make a multi-colored Cylon-like display
 
-- BlinkMColorFader
-  - Show how to control a BlinkM from Arduino with potentiometers
+- WiFiBlinkM
+  - Control a BlinkM using a YellowJacket or WiShield WiFi module
 
-- BlinkMColorList
-  - A sketch to write a light script with user-definable colors
 
 Processing Examples
 -------------------
@@ -57,6 +66,7 @@ Processing Examples
     (needs BlinkMCommunicator installed on an Arduino connected to BlinkM)
     Also contains the official version of "BlinkMComm.pde", 
     the Processing BlinkM library.
+
 
 Basic Stamp Examples
 --------------------
@@ -72,7 +82,7 @@ Max/MSP Examples
 
 Other
 -----
-- blinkm_nonvol_data.h
+- docs/blinkm_nonvol_data.h
   - The contents of the BlinkM ROM light scripts
 
 
