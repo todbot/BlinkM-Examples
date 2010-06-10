@@ -2,6 +2,29 @@
 // Edit these to match your network
 // You must pick an IP address by hand
 
+
+// crashspace network
+const prog_char ssid[] PROGMEM = {"CrashSpaceTW"};    // max 32 bytes
+unsigned char local_ip[]    = {172,16,16,182}; // IP address of WiShield
+unsigned char gateway_ip[]  = {172,16,16,1};   // router/gateway IP address
+unsigned char subnet_mask[] = {255,255,255,0};  // subnet mask for network
+// set security type
+unsigned char security_type = 0;    // 0 - open; 1 - WEP; 2 - WPA; 3 - WPA2
+// WPA/WPA2 passphrase
+const prog_char security_passphrase[] PROGMEM = {"blahblah"};  // max 64 chars
+
+/*
+// crashspace network
+const prog_char ssid[] PROGMEM = {"CrashSpaceDSL"};    // max 32 bytes
+unsigned char local_ip[]    = {192,168,1,182}; // IP address of WiShield
+unsigned char gateway_ip[]  = {192,168,1,254};   // router/gateway IP address
+unsigned char subnet_mask[] = {255,255,255,0};  // subnet mask for network
+// set security type
+unsigned char security_type = 0;    // 0 - open; 1 - WEP; 2 - WPA; 3 - WPA2
+// WPA/WPA2 passphrase
+const prog_char security_passphrase[] PROGMEM = {"blahblah"};  // max 64 chars
+*/
+/*
 // alex's network
 const prog_char ssid[] PROGMEM = {"The First"};    // max 32 bytes
 unsigned char local_ip[]    = {192,168,1,110}; // IP address of WiShield
@@ -11,6 +34,7 @@ unsigned char subnet_mask[] = {255,255,255,0};  // subnet mask for network
 unsigned char security_type = 2;    // 0 - open; 1 - WEP; 2 - WPA; 3 - WPA2
 // WPA/WPA2 passphrase
 const prog_char security_passphrase[] PROGMEM = {"C0183rTn@t10N"};  // max 64 chars
+*/
 /*
 // tod's network
 const prog_char ssid[] PROGMEM = {"todbot"};    // max 32 bytes
