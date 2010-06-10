@@ -37,7 +37,7 @@
 byte offline = 0; 
 
 // setting this to 1 will show the actual page contents on the serial console
-#define DEBUG 0
+#define DEBUG 1
 
 
 
@@ -128,13 +128,13 @@ void setup()
     BlinkM_setFadeSpeed(0, 30);
     BlinkM_setTimeAdj(0, -10);
     // play a little red-white-blue
-    BlinkM_fadeToRGB( 0, 0x66,0x00,0x00 );
+    BlinkM_setRGB( 0, 0x66,0x00,0x00 );
     delay(400);
-    BlinkM_fadeToRGB( 0, 0x66,0x66,0x66 );
+    BlinkM_setRGB( 0, 0x66,0x66,0x66 );
     delay(400);
-    BlinkM_fadeToRGB( 0, 0x00,0x00,0x66 );
+    BlinkM_setRGB( 0, 0x00,0x00,0x66 );
     delay(400);
-    BlinkM_fadeToRGB( 0, 0x00,0x00,0x00 );
+    BlinkM_setRGB( 0, 0x00,0x00,0x00 );
 
     if( swPressed() ) {
         goOffline();
