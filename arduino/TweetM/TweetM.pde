@@ -1,7 +1,7 @@
 /*
- * WiFiBlinkM - using WiServer on YellowJacket arduino board (or similar),
- *              periodically fetch a 3-channel color count from a URL
- *              and flash those colors on a BlinkM
+ * TweetM - using WiServer on YellowJacket arduino board (or similar),
+ *          query the Twitter Streaming API for a list of keywords
+ *          and flash corresponding colors on a BlinkM
  *
  * 2010 Tod E. Kurt, http://todbot.com/blog/
  *
