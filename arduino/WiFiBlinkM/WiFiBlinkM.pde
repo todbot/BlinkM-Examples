@@ -17,14 +17,31 @@
  * - hold down button on pin "swPin" to enable offline mode, or set "offline=1"
  * 
  * Installation:
- * 1. Be sure to copy the "WiShield" library in the "libraries" directory
- * into your {sketchbook}/libraries directory and restart the Arduino IDE
+ * 1. Be sure to copy the "WiShield" library located in the "libraries" 
+ *    directory into your computer's {sketchbook}/libraries directory 
+ *    and restart the Arduino IDE
  *
  * 2. Edit WiShield/apps-conf.h to have "#define APP_WISERVER" uncommented
+ *    (this is already done for you in "libraries/WiShield" in this dir)
  * 
  * 3. Edit the values is this sketch's "wifi_conf.h" to match your network.
  *
+ *
+ * Sending Twitter Streaming API requests:
+ * - You can see the exact request you need to send by doing:
+ *     curl -v 'http://blinkmlive:redgreenblue@stream.twitter.com/1/statuses/filter.json?track=colbert'
+ * - which is:
+ *     GET /1/statuses/filter.json?track=colbert HTTP/1.1
+ *     Authorization: Basic YmxpbmttbGl2ZTpyZWRncmVlbmJsdWU=
+ *     User-Agent: TweetM
+ *     Host: stream.twitter.com
+ *     Accept: * / *
+ *     (the Accept header has spaces removed betwen * and /)
+ *
  */
+
+#include <string.h>
+#include <avr/pgmspace.h>
 
 #include "WiServer.h"
 #include "Wire.h"
@@ -37,72 +54,140 @@
 byte offline = 0; 
 
 // setting this to 1 will show the actual page contents on the serial console
+// debug levels:
+// 0 -- debugging off
+// 1 -- basic info, connections, keywords found, etc.
+// 2 -- full text of web responses
+// 3 -- color flash counts
 #define DEBUG 1
 
 
+// FIXME: need to compute auth
+//char twuser[] = "blinkmlive";
+//char twpass[] = "redgrnblu";
+char twauth[] = "YmxpbmttbGl2ZTpyZWRncmVuYmx1ZQ==";
 
 // The URL we're fetching.  Need to do DNS lookup by hand
-char hostname[] = "todbot.com";
-uint8 ipaddr[]  = {70,32,68,89};  // comma-separated, not dot
-char uri[]      = "/colberttweets/";
+char hostname[] = "stream.twitter.com";
+uint8 ipaddr[]  = {168,143,162,55};  // comma-separated, not dot
+const char baseurl[] PROGMEM  = "/1/statuses/filter.json?track=";
 const int port  = 80;
-const int updateSecs = 10;  // update rate, every N seconds
 
-// A request that gets the latest METAR weather data for LAX
-GETrequest myRequest(ipaddr, port, hostname, uri);
+const int updateSecs = 10;         // fetch update rate, every N seconds
+const int colorUpdateMillis = 500; // color update rate, every N millisecs
+
+// IDEA: instead of making it array of arrays,
+// make it a linear list: "one,two,three,four+five,six"
+// and do split on-the-fly
+// because this takes up 160 bytes even if you use only 1 keyword
+// e.g. char keywords[160] =  "one,two,three,..."
+// oh no wait, that would only save for compile-time keywords
+// we eventually want run-time.  maybe if we use malloc() (egads!)
+const int keywords_max = 10;
+const int keywords_len = 16;
+
+char endtweet[] = "}\r\n";  // this marks the end of tweet data
+
+// the keywords you can choose
+char keywords[keywords_max][keywords_len] = 
+    {//  0123456789012345  <--- max size of each keyword
+        "stephen+colbert",
+        "colbert", 
+        "usa",
+        "freedom",
+        "tomato",
+        "salsa",
+    };
+// the color to flash 
+long keycolors[keywords_max] = 
+    {
+        0x333333,
+        0xffffff,
+        0x0000ff,
+        0x0000ff,
+        0xff0000,
+        0xff0000,
+    };
+
+int counts[keywords_max];
+int tmpcnts[keywords_max];
+
+const int urllen = 100;
+char url[urllen];
+
+// create a request object with most of the data (fill URL in later)
+GETrequest myRequest(ipaddr, port, hostname, NULL);
 
 // the last color counts received 
 uint8_t lastR, lastG, lastB;
 
+// string processing in C, laa da dee da dee!
+void buildQueryURL()
+{
+    int l;
+    strcpy_P( url, baseurl );            // get the start of it
+    for( int i=0; i< keywords_max; i++ ) {
+        l = strlen( url );
+        if( strlen(keywords[i]) == 0 ) continue;
+        strcpy( url+l, keywords[i] );   // add each keyword to it
+        l = strlen( url );
+        strcpy( url+l, ","); // FIXME:
+    }
+    url[strlen(url)-1] = 0;  // remove trailing ','  (yeah wasteful)
+}
+
 // Function that prints data from the server
 void parseData(char* data, int len)
 {
-    char colorcode[7];
-    char codestart = -1;
-
-    // Deal with the data returned by the server
-    // Note that the data is not null-terminated, may be broken up
-    // into smaller packets, and includes the HTTP header. 
-    while (len-- > 0) {
-        char c = *(data++);
-#if DEBUG > 0
-        Serial.print(c); //*(data++));
+    data[len] = 0;  // null terminate, does kill last char tho
+    strlwr(data);   // convert to lower case
+#if DEBUG > 1
+    Serial.println(data); // print out the server's response (slows down things)
 #endif
-        // look for "#123456"
-        if( codestart >= 0 && codestart < 7 ) {
-            colorcode[codestart++] = c;
+    // go through the keywords, looking for a match
+    for( int i=0; i< keywords_max; i++ ) {
+        if( strlen(keywords[i]) == 0 ) continue;
+        if( strstr( data, keywords[i] ) != NULL ) {
+            tmpcnts[i]++;
+#if DEBUG > 0
+            SerialPrintPStr(PSTR("** FOUND keyword: "));
+            Serial.println( keywords[i] );
+#endif
         }
-        if( c=='#' ) {
-            codestart=0;
+    }
+    // see if we're at the end of a tweet
+    if( strstr( data, endtweet ) != NULL ) {
+        for( int i=0; i< keywords_max; i++ ) {
+            if( tmpcnts[i] ) counts[i]++;
+            tmpcnts[i] = 0;
         }
-    } 
-    // we have a colorcode string, so let's parse it
-    if( codestart != -1 ) {
-        colorcode[6] = 0;  // null-terminate the string
-        Serial.print("color code: ");
-        Serial.println( colorcode );
-
-        long colorVal = strtol(colorcode,NULL,16);
-        lastR = (colorVal&0xff0000) >>16;
-        lastG = (colorVal&0x00ff00) >> 8;
-        lastB = (colorVal&0x0000ff) >> 0;
+#ifdef DEBUG > 0
+        SerialPrintPStr(PSTR("--------endtweet------\n"));
+#endif
     }
 }
 
+
 // ---------------------------------------------------------------------
+
+// Time (in millis) when the data should be retrieved 
+long updateTime;
+long colorUpdateTime;
 
 const int swPin = 6;   // pin where button is  
 
 byte swPinCount;
 
+//
 byte swPressed() 
 {
     return (digitalRead(swPin)==0); // button pressed 
 }
 
+//
 void goOffline(void)
 {
-    Serial.println("offline mode");
+    SerialPrintPStr(PSTR("offline mode\n"));
     offline = 1;
     for( int i=0;i<3;i++) {          // waggle to show off
         BlinkM_setRGB(0, 44,44,44 ); // mm love fours 
@@ -112,13 +197,21 @@ void goOffline(void)
     }
 }
 
+//
 void setup() 
 {
     pinMode(swPin, INPUT);
     digitalWrite(swPin, HIGH); // turn on internal pullup
 
     Serial.begin(57600);
-    Serial.println("WifiBlinkM");
+    SerialPrintPStr( PSTR("WifiBlinkM\n") );
+
+    buildQueryURL();        // construct URL
+    Serial.println( url );  // always print this
+
+    myRequest.setURL( url );
+    myRequest.setAuth( twauth );
+    myRequest.setReturnFunc(parseData);
 
     // setup blinkm
     BlinkM_beginWithPower();
@@ -139,52 +232,62 @@ void setup()
     if( swPressed() ) {
         goOffline();
     }
-
     if( offline ) { 
-        Serial.println("offline");
+        SerialPrintPStr( PSTR("offline\n") );
         return;
     }
 
     // Initialize WiServer (NULL for page serving function since not serving)
     WiServer.init(NULL);
 
-#if DEBUG > 0
+#if DEBUG > 1
     WiServer.enableVerboseMode(true);
 #endif
-    // Have the processData function called when data is returned by the server
-    myRequest.setReturnFunc(parseData);
-    Serial.println("online");
+
+    colorUpdateTime = millis() + colorUpdateMillis;
+
+    SerialPrintPStr(PSTR("online\n"));
 }
-
-
-// Time (in millis) when the data should be retrieved 
-long updateTime = 0;
-long colorUpdateTime = 0;
-
+    //
 void loop()
 {
     // Check if it's time to get an update
     if (millis() >= updateTime) {
         updateTime += 1000 * updateSecs;  // N secs from now
         if( offline ) {
-            Serial.println("offline");
+            SerialPrintPStr(PSTR("offline\n"));
             lastR = rand() % 5;
             lastG = rand() % 5;
             lastB = rand() % 5;
-        } else {
-            Serial.println("fetching");
-            myRequest.submit();
+        } 
+        else {
+            lastR = counts[0];
+            lastG = counts[1];
+            lastB = counts[2];
+            for( int i=0; i< keywords_max; i++) {
+                if( counts[i] > 0 ) {     // transfer over to flashing leds
+                    //lastR += counts[i];   // FIXME:    
+                }
+                tmpcnts[i] = counts[i] = 0;  // reset
+            }
+            if( myRequest.isActive() ) {
+                SerialPrintPStr(PSTR("query still active\n"));
+            } 
+            else {
+                SerialPrintPStr(PSTR("fetching\n"));
+                myRequest.submit();
+            }
         }
     }
     
     if( millis() >= colorUpdateTime ) {
-        colorUpdateTime += 500;
-
-        Serial.print("r,g,b:");
+        colorUpdateTime += colorUpdateMillis;
+#if DEBUG > 2        
+        SerialPrintPStr(PSTR("r,g,b:"));
         Serial.print(lastR, HEX);  Serial.print(',');
         Serial.print(lastG, HEX);  Serial.print(',');
         Serial.print(lastB, HEX);  Serial.print('\n');
-
+#endif
         if( swPressed() ) {
             swPinCount++;
             if( swPinCount > 10 ) {  // 10*500 = 5000
@@ -209,7 +312,6 @@ void loop()
             BlinkM_playScript( 0, 5, 1, 0); // script #5 is blu flashing
             lastB--;
         }
-
     }
  
     if( !offline ) 
@@ -218,72 +320,13 @@ void loop()
     delay(1);
 }
 
+// given a PROGMEM string, use Serial.print() to send it out
+void SerialPrintPStr(const prog_char str[])
+{
+  char c;
+  if(!str) return;
+  while((c = pgm_read_byte(str++)))
+    Serial.print(c,BYTE);
+}
 
-/*
- * state machine idea
- * 
 
-enum {
-    off0 = 0,
-    red_on,
-    red_off,
-    off1,
-    grn_on,
-    grn_off,
-    off2,
-    blu_on,
-    blu_off,
-    off3,
-    done,
-};
-uint8_t colorstate = off0;
-long colorUpdateTime = 0;
-
-    // okay so we've got lastR,lastG,lastB
-    // we want to flash them, one for N msecs, off for N msecs
-    // but we don't want to block 
-    // state red_on, red_off, off, grn_on, grn_off, off, 
-    // state ticker happens every N-ish msecs
-    if( millis() >= colorUpdateTime ) {
-        colorUpdateTime += 250;
-        if( colorstate == done ) {
-            colorstate = off0;
-        }
-        
-        if( colorstate == red_on ) {
-            if( lastR>0 ) {
-                Serial.println("red_on");
-                BlinkM_fadeToRGB( 0, 0xff,0x22,0x22 );
-            }
-        }
-        else if( colorstate == red_off ) {
-            Serial.println("red_off");
-            BlinkM_fadeToRGB( 0, 0x00,0x00,0x00 );
-            if( --lastR > 0 ) colorstate = red_on;
-        }
-        else if( colorstate == grn_on ) {
-            if( lastG>0 ) {
-                Serial.println("grn_on");
-                BlinkM_fadeToRGB( 0, 0x22,0xff,0x22 );
-            }
-        }
-        else if( colorstate == grn_off ) {
-            Serial.println("grn_off");
-            BlinkM_fadeToRGB( 0, 0x00,0x00,0x00 );
-            if( --lastG > 0 ) colorstate = grn_on;
-        }
-        else if( colorstate == blu_on ) {
-            if( lastB>0 ) {
-                Serial.println("blu_on");
-                BlinkM_fadeToRGB( 0, 0x22,0x22,0xff );
-            }
-        }
-        else if( colorstate == blu_off ) {
-            Serial.println("blu_off");
-            BlinkM_fadeToRGB( 0, 0x00,0x00,0x00 );
-            if( --lastB > 0 ) colorstate = blu_on;
-        }
-        colorstate++;  // advance to next state
-
-    }    
-*/

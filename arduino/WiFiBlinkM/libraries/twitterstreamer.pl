@@ -15,7 +15,7 @@ use IO::Select;
 use MIME::Base64;
 #use Time::Hires qw(time);
 
-my $debug = 0;
+my $debug = 1;
 
 # change this to be your own Twitter login
 my $twuser = "blinkmlive";
