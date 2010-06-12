@@ -10,11 +10,8 @@
  * Notes:
  * - It takes ~10 seconds for WiFi module to come online (no security)
  * - It takes ~30 seconds for WiFi module to come online using WPA 
- * - it a single 6-digit hex number that looks like a color code ("#FF33cc")
- * - this number is actually a set of 3 counts
- * - these 3 numbers are used as number of flashes to do, for 3 "channels"
- * - they are labelled 'r', 'g', 'b', even though the colors they do may not be
- * - hold down button on pin "swPin" to enable offline mode, or set "offline=1"
+ *
+ * - Hold down button on pin "swPin" to enable offline mode, or set "offline=1"
  * 
  * Installation:
  * 1. Be sure to copy the "WiShield" library located in the "libraries" 
