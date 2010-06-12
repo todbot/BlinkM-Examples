@@ -65,8 +65,7 @@ byte offline = 0;
 // FIXME: need to compute auth
 //char twuser[] = "blinkmlive";
 //char twpass[] = "redgrnblu";
-//char twauth[] = "YmxpbmttbGl2ZTpyZWRncmVuYmx1ZQ==";
-char twauth[] = "YmxpbmttbGl2ZTpyZWRncm5ibHU=";
+char twauth[] = "YmxpbmttbGl2ZTpyZWRncmVuYmx1ZQ==";
 
 // The URL we're fetching.  Need to do DNS lookup by hand
 char hostname[] = "stream.twitter.com";
