@@ -4,6 +4,8 @@
  * 
  * 2010 Tod E. Kurt, http://todbot.com/blog/
  *
+ * This code takes some tricksk from:
+ *  http://codinglab.blogspot.com/2008/10/i2c-on-avr-using-bit-banging.html
  */
 
 #include "WConstants.h"
