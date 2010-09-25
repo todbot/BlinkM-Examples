@@ -49,7 +49,7 @@ void loop()
 void BlinkM_off(byte addr)
 {
   BlinkM_stopScript( addr );
-  BlinkM_setFadeSpeed(addr,20);
+  BlinkM_setFadeSpeed(addr,10);
   BlinkM_setRGB(addr, 0,0,0 );
 }
 
