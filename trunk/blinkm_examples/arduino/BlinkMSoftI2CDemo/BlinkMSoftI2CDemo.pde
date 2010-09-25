@@ -7,8 +7,8 @@
  *  
  */
 
-const byte sdaPin = 7;
-const byte sclPin = 6;
+const byte sdaPin = 7;  // digital pin 7 wired to 'd' on BlinkM
+const byte sclPin = 6;  // digital pin 6 wired to 'c' on BlinkM
 
 #include "SoftI2CMaster.h"
 SoftI2CMaster i2c = SoftI2CMaster( sdaPin,sclPin );
