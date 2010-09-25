@@ -55,7 +55,7 @@ void loop()
   BlinkM_setRGB( blinkm_addr, r,g,b );
   delay(10);
   BlinkM_fadeToRGB( blinkm_addr, 0,0,0 );
-  delay(100);
+  delay(1000);
   
 }
 
