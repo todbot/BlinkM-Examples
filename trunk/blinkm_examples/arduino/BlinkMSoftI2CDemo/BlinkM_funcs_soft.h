@@ -1,3 +1,11 @@
+/**
+ * BlinkM_funcs_soft.h -- an extremely cut-down version of BlinkM_funcs.h 
+ *                        for use with SoftI2CMaster library
+ *                        
+ *
+ * 2010 Tod E. Kurt, http://todbot.com/blog/
+ * 
+ */
 
 int errcnt;
 

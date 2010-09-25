@@ -40,8 +40,6 @@ private:
 public:
   // public methods
   SoftI2CMaster(uint8_t sdaPin, uint8_t sclPin);
-  void begin();
-  void end();
   uint8_t beginTransmission(uint8_t address);
   uint8_t beginTransmission(int address);
   uint8_t endTransmission(void);
