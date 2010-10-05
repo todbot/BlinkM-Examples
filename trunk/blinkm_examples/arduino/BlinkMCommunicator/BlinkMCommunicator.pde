@@ -44,9 +44,10 @@ const boolean BLINKM_ARDUINO_POWERED = true;
 
 const int CMD_START_BYTE = 0x01;
 
-int blinkm_addr = 0x09;
+//int blinkm_addr = 0x09;
 
-byte serInStr[32];  // array that will hold the serial input string
+const int serBufLen = 32;
+byte serInBuf[serBufLen];  // array that will hold the serial input string
 
 int ledPin = 13;
 
@@ -62,16 +63,18 @@ void setup()
   else {
     BlinkM_begin();
   }
-  delay(100);  // hmmm.
+  delay(100);  // wait for power to stabilize
 
   lookForBlinkM();
-  
+
+  /*  
   byte rc = BlinkM_checkAddress( blinkm_addr );
   if( rc == -1 ) 
     Serial.println("No response");  // FIXME: make this an interogator loop?
   else if( rc == 1 ) 
     Serial.println("I2C address mismatch");
-  
+  */
+
   Serial.println("BlinkMCommunicator ready");
 #ifdef DEBUG
   Serial.println("DEBUG MODE: will not allow proper functionality");
@@ -87,51 +90,68 @@ void lookForBlinkM()
   } else { 
     Serial.print("Device found at addr ");
     Serial.println( a, DEC);
-    blinkm_addr = a;
+    //blinkm_addr = a;
   }
+}
+
+// called when address is found in BlinkM_scanI2CBus()
+void i2cScanResult( byte addr, byte result )
+{
+    Serial.print(addr,BYTE); 
+    Serial.print(result,BYTE);
 }
 
 void loop()
 {
   int num;
   //read the serial port and create a string out of what you read
-  num = readCommand(serInStr);
+  num = readCommand(serInBuf);
   if( num == 0 )   // see if we got a proper command string yet
     return;
-
+  
   digitalWrite(ledPin,HIGH);  // say we're working on it
+
+    byte addr    = serInBuf[1];
+    byte sendlen = serInBuf[2];
+    byte recvlen = serInBuf[3];
+    byte* cmd    = serInBuf+4;
+
+  if( addr == 128 ) { // 128 == i2c scan command
+    BlinkM_scanI2CBus( cmd[0], cmd[1], i2cScanResult);
+    Serial.print(128,BYTE);
+  }
+  else { // normal transaction
     
-  byte addr    = serInStr[1];
-  byte sendlen = serInStr[2];
-  byte recvlen = serInStr[3];
-  byte* cmd    = serInStr+4;
 #ifdef DEBUG
-  Serial.print(" addr:"); Serial.print(addr,HEX);
-  Serial.print(" sendlen:"); Serial.print(sendlen,HEX);
-  Serial.print(" recvlen:"); Serial.print(recvlen,HEX);
-  Serial.print(" cmd[0..7]:"); Serial.print(cmd[0],HEX);
-  Serial.print(","); Serial.print(cmd[1],HEX); 
-  Serial.print(","); Serial.print(cmd[2],HEX);
-  Serial.print(","); Serial.print(cmd[3],HEX);
-  Serial.print(","); Serial.print(cmd[4],HEX);
-  Serial.print(","); Serial.print(cmd[5],HEX);
-  Serial.print(","); Serial.print(cmd[6],HEX);
-  Serial.print(","); Serial.println(cmd[7],HEX);
+    Serial.print(" addr:"); Serial.print(addr,HEX);
+    Serial.print(" sendlen:"); Serial.print(sendlen,HEX);
+    Serial.print(" recvlen:"); Serial.print(recvlen,HEX);
+    Serial.print(" cmd[0..7]:"); Serial.print(cmd[0],HEX);
+    Serial.print(","); Serial.print(cmd[1],HEX); 
+    Serial.print(","); Serial.print(cmd[2],HEX);
+    Serial.print(","); Serial.print(cmd[3],HEX);
+    Serial.print(","); Serial.print(cmd[4],HEX);
+    Serial.print(","); Serial.print(cmd[5],HEX);
+    Serial.print(","); Serial.print(cmd[6],HEX);
+    Serial.print(","); Serial.println(cmd[7],HEX);
 #endif
 
-  BlinkM_sendCmd(addr, cmd, sendlen);
-
-  // if looking for a response, get it
-  if( recvlen!=0 ) {
-    byte resp[16];
-    int rc = BlinkM_receiveBytes(addr, resp, recvlen);
-    for( int i=0; i<recvlen; i++) 
-      Serial.print(resp[i],BYTE);
-  }
-
-  for(int i=0; i<30;i++)
-    serInStr[i] = 0;  // say we've used the string (not needed really)
+    BlinkM_sendCmd(addr, cmd, sendlen);
+      
+    // if looking for a response, get it
+    if( recvlen!=0 ) {
+        byte resp[16];
+        int rc = BlinkM_receiveBytes(addr, resp, recvlen);
+        for( int i=0; i<recvlen; i++) 
+            Serial.print(resp[i],BYTE);
+    }
     
+    for(int i=0; i< serBufLen; i++) {
+        serInBuf[i] = 0;  // say we've used the string (not needed really)
+    }
+
+  } // normal transaction
+
   digitalWrite(ledPin,LOW); // show we're done
     
 }   
