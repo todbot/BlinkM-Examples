@@ -23,7 +23,8 @@ void setup()
 {
   Serial.begin( 19200 );
   Serial.println("BlinkMSoftI2CDemo");
-
+  delay(500);
+  
   BlinkM_off(0);
 
   for( int i=0; i< 100; i++ ) {  // flash the blinkms
