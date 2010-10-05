@@ -126,8 +126,9 @@ fi
 
 if [ "$cmd" == "communicator" ] || [ "$cmd" == "all" ]; then
     echo "Making communicator zip file"
-    pushd $BASEDIR
+    pushd $BASEDIR/arduino
     zip -r $COMMUNICATOR_ZIP BlinkMCommunicator -x \*.svn\* -x \*DS_Store\* -x \*~ -x \*applet\*
+    mv $COMMUNICATOR_ZIP $BASEDIR
     popd
     echo "$COMMUNICATOR_ZIP done"
 fi
