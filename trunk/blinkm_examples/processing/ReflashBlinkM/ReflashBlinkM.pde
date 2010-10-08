@@ -192,31 +192,31 @@ class Programmer implements Runnable {
     String cmdpath = sketchPath;
     String binpath = "";
     String confpath = "";
-    
+    String sep = File.separator;
+
     if( platform == MACOSX ) { 
-      cmdpath += "/ReflashBlinkM.app/Contents/Resources/Java";
+      cmdpath += "/ReflashBlinkM.app/Contents/Resources/Java/tools";
       File f = new File(cmdpath);
       if( !f.exists() ) {              // in a sketch, not an exported app
-        cmdpath = sketchPath + "/data";
+        cmdpath = sketchPath + "/tools";
       }
       binpath = cmdpath + "/bin-macosx/avrdude";
     }
     else if( platform == WINDOWS ) {
-      cmdpath += "\\data";  // FIXME: verify this
+      cmdpath += "\\lib";  // FIXME: verify this
       binpath = cmdpath + "\\bin-windows\\avrdude.exe";
     }
     
-    confpath = cmdpath + "/etc/avrdude.conf";
+    confpath = cmdpath + sep + "etc" + sep + "avrdude.conf";
     
-    //int fwid = 2;
     int fwid = -1;
     for( int i = 0; i<firmwares.length; i++ ) {
       if( firmwares[i].name.equals(firmName) ) fwid = i;
     }
-    Firmware fw = firmwares[fwid];
+    Firmware fw = firmwares[fwid];  // FIXME: check fwid not -1
     
-    String hexpath = cmdpath + "/firmwares/"+ fw.hex;
-    String eeppath = cmdpath + "/firmwares/"+ fw.eep;
+    String hexpath = cmdpath +sep+ "firmwares" +sep+ fw.hex;
+    String eeppath = cmdpath +sep+ "firmwares" +sep+ fw.eep;
     
     String[] cmd = new String[] { binpath, 
                                   "-C", confpath,
@@ -230,7 +230,8 @@ class Programmer implements Runnable {
                                   "-U", "hfuse:w:"+fw.hfuse+":m",
                                   "-U", "efuse:w:"+fw.efuse+":m",
     };
-    
+
+    // run the actual avrdude command
     String output = runAvrdudeCmd( cmd );
     
     if( output.indexOf("can't open device") != -1 ) {
@@ -248,8 +249,6 @@ class Programmer implements Runnable {
     else if( output.indexOf("done.") != -1 ) {
       reflashDialog.updateMsg("Done.");
     }
-    //else if( output.indexOf("writing flash") != -1 ) {
-    //  updateMsg("Writing flash");
 
     reflashDialog.setReflashing(false);
   }
