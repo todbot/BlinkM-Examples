@@ -1,10 +1,11 @@
 /**
- * ReflashBlinkM
+ * ReflashBlinkM  -- Reflash a BlinkM using ArduinoISP sketch on Arduino
  *
  *
+ * 2010, Tod E. Kurt, http://thingm.com/
  *
- *
- * for BlinkM:
+ * 
+ * Avrdude commands for BlinkM when using "ArduinoISP" sketch:
  *  avrdude -p attiny45 -b 19200 -c stk500v1 -P /dev/tty.usbserial-A6008hXg \
  *  -U flash:w:/Users/tod/projects/projects_todbot/blinkm/blinkmv1/blinkmv1.hex
  *
@@ -14,7 +15,7 @@
  * avrdude  -p attiny45 -b 19200 -c stk500v1 -P /dev/tty.usbserial-A6008hXg \
  *  -U lfuse:w:0xDD:m
  *
- * and that can all be one command
+ * and that can all be one command.
  *
  */
 
@@ -93,8 +94,6 @@ String firmName;
 
 ReflashDialog reflashDialog;
 
-boolean reflashing = false;
-
 // Processing's setup()
 void setup() {
 
@@ -161,11 +160,19 @@ class Programmer implements Runnable {
           reflashDialog.updateMsg("Writing lfuse...");
         } else if( line.indexOf("verifying lfuse") != -1 ) {
           reflashDialog.updateMsg("Verifying lfuse...");
+        } else if( line.indexOf("writing hfuse") != -1 ) {
+          reflashDialog.updateMsg("Writing hfuse...");
+        } else if( line.indexOf("verifying hfuse") != -1 ) {
+          reflashDialog.updateMsg("Verifying hfuse...");
+        } else if( line.indexOf("writing efuse") != -1 ) {
+          reflashDialog.updateMsg("Writing efuse...");
+        } else if( line.indexOf("verifying efuse") != -1 ) {
+          reflashDialog.updateMsg("Verifying efuse...");
         }
         if( debug ) println(":"+line);
-        if( reflashing == false) { 
-          return "canceled";
-        }
+        //if( reflashing == false) { 
+        //  return "canceled";
+        //}
       }
     } catch( IOException ioe ) { 
       ioe.printStackTrace();
@@ -179,7 +186,7 @@ class Programmer implements Runnable {
   // This is run outside the normal Swing GUI thread
   //
   void reflashBlinkM() {
-    
+    reflashDialog.setReflashing(true);
     reflashDialog.updateMsg("Reflashing '"+firmName+"' on "+portName+"...");
     
     String cmdpath = sketchPath;
@@ -235,12 +242,16 @@ class Programmer implements Runnable {
     else if( output.indexOf("Expected signature") != -1 ) { 
       reflashDialog.updateMsg("Wrong chip type detected");
     }
+    else if( output.indexOf("verification error") != -1 ) {
+        reflashDialog.updateMsg("Verification error, bad wiring?");
+    }
     else if( output.indexOf("done.") != -1 ) {
       reflashDialog.updateMsg("Done.");
     }
     //else if( output.indexOf("writing flash") != -1 ) {
     //  updateMsg("Writing flash");
-    
+
+    reflashDialog.setReflashing(false);
   }
 
 } // class Programmer
@@ -254,6 +265,9 @@ public class ReflashDialog extends JDialog {
   JComboBox portChoices;
   JComboBox firmChoices;
   JLabel msgbText;
+  JButton reflashButton;
+
+  boolean reflashing = false;
 
   //
   public ReflashDialog() {
@@ -264,11 +278,11 @@ public class ReflashDialog extends JDialog {
       UIManager.setLookAndFeel( new MetalLookAndFeel() );
     } catch(Exception e) { }  // don't really care if it doesn't work
 
-    reflashDialog();
+    openReflashDialog();
   }
 
 
-  public void reflashDialog() {
+  public void openReflashDialog() {
 
     String[] portNames = listPorts();
     String[] firmNames = getFirmwareNames();
@@ -316,7 +330,7 @@ public class ReflashDialog extends JDialog {
     JLabel firmText = new JLabel("Select BlinkM firmware");
     JLabel portText = new JLabel("Select port of ArduinoISP");
 
-    JButton reflashButton = new JButton("Reflash");
+    reflashButton = new JButton("Reflash");
 
     msgtPanel.add( msgtText );
     msgbPanel.add( msgbText );
@@ -340,7 +354,7 @@ public class ReflashDialog extends JDialog {
           firmName = (String) firmChoices.getSelectedItem();
           portName = (String) portChoices.getSelectedItem();
 
-          reflashing = true;
+          setReflashing(true);
           new Thread( new Programmer() ).start();
           
         }
@@ -370,6 +384,14 @@ public class ReflashDialog extends JDialog {
   void updateMsg(String s) {
     if(debug) println(s);
     msgbText.setText("<html>"+s+"</html>");
+  }
+
+  void setReflashing(boolean b) { 
+      reflashing = b;
+      reflashButton.setEnabled( !b );
+  }
+  boolean isReflashing() {
+      return reflashing;
   }
 
   // Return a list of potential ports
