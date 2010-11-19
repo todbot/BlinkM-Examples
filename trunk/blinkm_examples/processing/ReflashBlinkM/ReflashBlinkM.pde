@@ -2,8 +2,10 @@
  * ReflashBlinkM  -- Reflash a BlinkM using ArduinoISP sketch on Arduino
  * -------------
  *
- * NOTE: when building this app with "Export Application",
- *       you must run "./populate-firmwares.sh" after exporting.
+ * Steps to build application:
+ *  1. "Export Application" from within Processing
+ *  2. Run "./package-after-export.sh" on command-line
+ *
  *
  * 2010, Tod E. Kurt, http://thingm.com/
  *
@@ -31,7 +33,7 @@ import java.util.*;
 
 import processing.serial.*;
 
-static final boolean debug = false;
+boolean debug = true;
 
 public static class Firmware  {
   public String name;    // name of firmware
@@ -146,7 +148,7 @@ class Programmer implements Runnable {
       String s = "";
       for( int i=0; i< cmd.length;i++)
         s += cmd[i]+" ";
-      println("cmd:"+s);
+      println("avrdude cmd:\n"+s); // always print out avrdude command to console
       
       String line;
       while ((line = br.readLine()) != null) {
@@ -206,7 +208,7 @@ class Programmer implements Runnable {
       binpath = cmdpath + "/bin-macosx/avrdude";
     }
     else if( platform == WINDOWS ) {
-      cmdpath += "\\lib";  // FIXME: verify this
+      cmdpath += "\\tools";  // FIXME: verify this
       binpath = cmdpath + "\\bin-windows\\avrdude.exe";
     }
     
@@ -227,8 +229,8 @@ class Programmer implements Runnable {
                                   "-b", "19200",
                                   "-P", portName,
                                   "-p", fw.mcu,
-                                  "-U", "flash:w:"+hexpath,
-                                  "-U", "eeprom:w:"+eeppath,
+                                  "-U", "flash:w:"+hexpath+":i",
+                                  "-U", "eeprom:w:"+eeppath+":i",
                                   "-U", "lfuse:w:"+fw.lfuse+":m",
                                   "-U", "hfuse:w:"+fw.hfuse+":m",
                                   "-U", "efuse:w:"+fw.efuse+":m",
