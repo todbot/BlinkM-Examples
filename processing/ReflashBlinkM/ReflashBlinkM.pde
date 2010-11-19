@@ -238,13 +238,19 @@ class Programmer implements Runnable {
       reflashDialog.updateMsg("Can't open serial device, try another");
     }
     else if( output.indexOf("Device is not responding") != -1 ) {
-      reflashDialog.updateMsg("Programmer not responding, check connections");
+      reflashDialog.updateMsg("Programmer not responding. Check connections.");
+    }
+    else if( output.indexOf("programmer is not responding") != -1 ) {
+      reflashDialog.updateMsg("Programmer not responding. ArduinoISP loaded?");
     }
     else if( output.indexOf("Expected signature") != -1 ) { 
-      reflashDialog.updateMsg("Wrong chip type detected");
+      reflashDialog.updateMsg("Wrong chip type detected. Use other firmware.");
     }
     else if( output.indexOf("verification error") != -1 ) {
         reflashDialog.updateMsg("Verification error, bad wiring?");
+    }
+    else if( output.indexOf("Yikes!  Invalid device signature.") != -1 ){
+      reflashDialog.updateMsg("No chip detected. Check connections.");
     }
     else if( output.indexOf("done.") != -1 ) {
       reflashDialog.updateMsg("Done.");
@@ -325,7 +331,7 @@ public class ReflashDialog extends JDialog {
     
 
     JLabel msgtText = new JLabel("Welcome to BlinkM Reflasher Tool");
-    msgbText = new JLabel("<html></html>");
+    msgbText = new JLabel("<html>Load the ArduinoISP sketch onto your Arduino before continuing.</html>");
     JLabel firmText = new JLabel("Select BlinkM firmware");
     JLabel portText = new JLabel("Select port of ArduinoISP");
 
