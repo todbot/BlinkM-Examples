@@ -1,6 +1,9 @@
 /**
  * ReflashBlinkM  -- Reflash a BlinkM using ArduinoISP sketch on Arduino
+ * -------------
  *
+ * NOTE: when building this app with "Export Application",
+ *       you must run "./populate-firmwares.sh" after exporting.
  *
  * 2010, Tod E. Kurt, http://thingm.com/
  *
@@ -28,7 +31,7 @@ import java.util.*;
 
 import processing.serial.*;
 
-static final boolean debug = true;
+static final boolean debug = false;
 
 public static class Firmware  {
   public String name;    // name of firmware
@@ -253,7 +256,7 @@ class Programmer implements Runnable {
       reflashDialog.updateMsg("No chip detected. Check connections.");
     }
     else if( output.indexOf("done.") != -1 ) {
-      reflashDialog.updateMsg("Done.");
+      reflashDialog.updateMsg("Reflashing Done!");
     }
 
     reflashDialog.setReflashing(false);
