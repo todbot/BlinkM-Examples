@@ -35,6 +35,8 @@ import processing.serial.*;
 
 boolean debug = true;
 
+PApplet papplet;
+
 public static class Firmware  {
   public String name;    // name of firmware
   public String mcu;     //
@@ -101,7 +103,7 @@ ReflashDialog reflashDialog;
 
 // Processing's setup()
 void setup() {
-
+  papplet = this; // for use with Serial later, yes this is dumb
 }
 
 // Procesing's draw()
@@ -111,8 +113,6 @@ void draw() {
     super.frame.setVisible(false);  // turn off Processing's frame
     super.frame.toBack();
 
-    //PApplet p = this;
-    println("showDialog");
     javax.swing.SwingUtilities.invokeLater(new Runnable() {
         public void run() {
           try{ Thread.sleep(500); } catch(Exception e){} // wait to avoid assert
@@ -138,7 +138,7 @@ class Programmer implements Runnable {
   //
   String runAvrdudeCmd( String[] cmd  ) {
     String rc = "";
-    
+
     try { 
       Process process=new ProcessBuilder(cmd).redirectErrorStream(true).start();
       InputStream is = process.getInputStream();
@@ -148,7 +148,7 @@ class Programmer implements Runnable {
       String s = "";
       for( int i=0; i< cmd.length;i++)
         s += cmd[i]+" ";
-      println("avrdude cmd:\n"+s); // always print out avrdude command to console
+      println("avrdude cmd:\n"+s);// always print out avrdude command to console
       
       String line;
       while ((line = br.readLine()) != null) {
@@ -236,8 +236,17 @@ class Programmer implements Runnable {
                                   "-U", "efuse:w:"+fw.efuse+":m",
     };
 
+    /*
+    // open the port so the Arduino resets (and keep it open)
+    Serial tmpport = new Serial(papplet, portName, 19200);
+    reflashDialog.updateMsg("opening port '"+portName+"'...");
+    delay(3000);
+    */
+
     // run the actual avrdude command
+    reflashDialog.updateMsg("running avrdude command...");
     String output = runAvrdudeCmd( cmd );
+
     
     if( output.indexOf("can't open device") != -1 ) {
       reflashDialog.updateMsg("Can't open serial device, try another");
@@ -256,6 +265,15 @@ class Programmer implements Runnable {
     }
     else if( output.indexOf("Yikes!  Invalid device signature.") != -1 ){
       reflashDialog.updateMsg("No chip detected. Check connections.");
+    }
+    else if( output.indexOf("initialization failed") != -1 ) { 
+      reflashDialog.updateMsg("Programmer init failure. ArduinoISP loaded?");
+    }
+    else if( output.indexOf("protocol error") != -1 ) { 
+      reflashDialog.updateMsg("Programmer protocol error. ArduinoISP loaded?");
+    }
+    else if( output.indexOf("not in sync") != -1 ) { 
+      reflashDialog.updateMsg("Programmer sync error. ArduinoISP loaded?");
     }
     else if( output.indexOf("done.") != -1 ) {
       reflashDialog.updateMsg("Reflashing Done!");
@@ -432,7 +450,7 @@ public class ReflashDialog extends JDialog {
     return names;
   }
 
-}
+} // ReflashDialog
 
 
 /**
