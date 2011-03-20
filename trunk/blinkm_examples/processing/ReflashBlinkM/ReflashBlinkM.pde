@@ -10,17 +10,20 @@
  * 2010, Tod E. Kurt, http://thingm.com/
  *
  * 
- * Avrdude commands for BlinkM when using "ArduinoISP" sketch:
- *  avrdude -p attiny45 -b 19200 -c stk500v1 -P /dev/tty.usbserial-A6008hXg \
+ * Avrdude commands for BlinkM when using Arduino w/ "ArduinoISP" sketch:
+ * 1. avrdude -p attiny45 -b 19200 -c stk500v1 -P /dev/tty.usbserial-A6008hXg \
  *  -U flash:w:/Users/tod/projects/projects_todbot/blinkm/blinkmv1/blinkmv1.hex
- *
- * avrdude -p attiny45 -b 19200 -c stk500v1 -P /dev/tty.usbserial-A6008hXg \
+ * 2. avrdude -p attiny45 -b 19200 -c stk500v1 -P /dev/tty.usbserial-A6008hXg \
  *  -U eeprom:w:/Users/tod/projects/projects_todbot/blinkm/blinkmv1/blinkmv1.eep
- *
- * avrdude  -p attiny45 -b 19200 -c stk500v1 -P /dev/tty.usbserial-A6008hXg \
+ * 3. avrdude  -p attiny45 -b 19200 -c stk500v1 -P /dev/tty.usbserial-A6008hXg \
  *  -U lfuse:w:0xDD:m
  *
  * and that can all be one command.
+ *
+ * Avrdude commands for BlinkM when using AVR-ISP:
+ * 1. avrdude -p attiny45 -P usb -c avrispmkii -U flash:w:...
+ *
+ *
  *
  */
 
@@ -35,7 +38,6 @@ import processing.serial.*;
 
 boolean debug = true;
 
-PApplet papplet;
 
 public static class Firmware  {
   public String name;    // name of firmware
@@ -51,34 +53,63 @@ public static class Firmware  {
   }
 }
 
+static Firmware firmwareCustom85 = 
+  new Firmware( "Custom ATtiny85 firmware...",
+                "attiny85",
+                "",
+                "",
+                "0xE2",
+                "0xDD",
+                "0xFE"
+                );
+static Firmware firmwareCustom45 = 
+  new Firmware( "Custom ATtiny45 firmware...",
+                "attiny45",
+                "",
+                "",
+                "0xE2",
+                "0xDD",
+                "0xFE"
+                );
+
+static Firmware firmwareCustom84 = 
+  new Firmware( "Custom ATtiny84 firmware...",
+                "attiny84",
+                "",
+                "",
+                "0xE2",
+                "0xDD",
+                "0xFE"
+                );
+
 // the supported track durations
-public static final Firmware[] firmwares = new Firmware [] {
+public static Firmware[] firmwares = new Firmware [] {
   new Firmware( "BlinkM new (ATtiny85)", 
                 "attiny85", 
-                "blinkm.hex", 
-                "blinkm.eep",
+                "blinkm_attiny85.hex", 
+                "blinkm_attiny85.eep",
                 "0xE2",
                 "0xDD",
                 "0xFE"
                 ),
   new Firmware( "BlinkM MinM (ATtiny85)", 
                 "attiny85", 
-                "blinkm.hex", 
-                "blinkm.eep", 
+                "blinkm_attiny85.hex", 
+                "blinkm_attiny85.eep", 
                 "0xE2",
                 "0xDD",
                 "0xFE"
                 ),
   new Firmware( "BlinkM MaxM new (ATtiny 84)",
                 "attiny84", 
-                "blinkmv2-attiny84.hex",
-                "blinkmv2-attiny84.eep",
+                "blinkm_maxm_attiny84.hex",
+                "blinkm_maxm_attiny84.eep",
                 "0xE2",
                 "0xDD",
                 "0xFE"
                 ),
   new Firmware( "BlinkM orig (ATtiny45)", 
-                "attiny45", 
+                "attiny45",
                 "blinkmv1.hex",
                 "blinkmv1.eep",
                 "0xE2",
@@ -93,17 +124,26 @@ public static final Firmware[] firmwares = new Firmware [] {
                 "0xDD",
                 "0xFE"
                 ),
+  firmwareCustom85,
+  firmwareCustom45,
+  firmwareCustom84,
 };
 
-
+Firmware fw = firmwares[0];
 String portName;
-String firmName;
+String ispType;     // can be: "avrispmkii", "usbtiny", "arduinoisp"
+boolean customFw;   // is this a standard firmware, or a custom one?
+
+JFileChooser fc;
+JLabel firmFileStr;
+JRadioButton ispButtonAvrIspMkII;
+JRadioButton ispButtonUsbTiny;
+JRadioButton ispButtonArduinoIsp;
 
 ReflashDialog reflashDialog;
 
 // Processing's setup()
 void setup() {
-  papplet = this; // for use with Serial later, yes this is dumb
 }
 
 // Procesing's draw()
@@ -139,16 +179,17 @@ class Programmer implements Runnable {
   String runAvrdudeCmd( String[] cmd  ) {
     String rc = "";
 
+    String s = "";
+    for( int i=0; i< cmd.length;i++)
+      s += cmd[i]+" ";
+    println("avrdude cmd:\n"+s);// always print out avrdude command to console
+    
     try { 
       Process process=new ProcessBuilder(cmd).redirectErrorStream(true).start();
       InputStream is = process.getInputStream();
       BufferedReader br = new BufferedReader(new InputStreamReader(is));
       
       //System.out.printf("Output of running %s is:", Arrays.toString(cmd));
-      String s = "";
-      for( int i=0; i< cmd.length;i++)
-        s += cmd[i]+" ";
-      println("avrdude cmd:\n"+s);// always print out avrdude command to console
       
       String line;
       while ((line = br.readLine()) != null) {
@@ -175,9 +216,7 @@ class Programmer implements Runnable {
           reflashDialog.updateMsg("Verifying efuse...");
         }
         if( debug ) println(":"+line);
-        //if( reflashing == false) { 
-        //  return "canceled";
-        //}
+
       }
     } catch( IOException ioe ) { 
       ioe.printStackTrace();
@@ -191,6 +230,7 @@ class Programmer implements Runnable {
   // This is run outside the normal Swing GUI thread
   //
   void reflashBlinkM() {
+    String firmName = fw.name;
     reflashDialog.setReflashing(true);
     reflashDialog.updateMsg("Reflashing '"+firmName+"' on "+portName+"...");
     
@@ -214,66 +254,75 @@ class Programmer implements Runnable {
     
     confpath = cmdpath + sep + "etc" + sep + "avrdude.conf";
     
-    int fwid = -1;
-    for( int i = 0; i<firmwares.length; i++ ) {
-      if( firmwares[i].name.equals(firmName) ) fwid = i;
-    }
-    Firmware fw = firmwares[fwid];  // FIXME: check fwid not -1
-    
-    String hexpath = cmdpath +sep+ "firmwares" +sep+ fw.hex;
-    String eeppath = cmdpath +sep+ "firmwares" +sep+ fw.eep;
-    
-    String[] cmd = new String[] { binpath, 
-                                  "-C", confpath,
-                                  "-c", "stk500v1", 
-                                  "-b", "19200",
-                                  "-P", portName,
-                                  "-p", fw.mcu,
-                                  "-U", "flash:w:"+hexpath+":i",
-                                  "-U", "eeprom:w:"+eeppath+":i",
-                                  "-U", "lfuse:w:"+fw.lfuse+":m",
-                                  "-U", "hfuse:w:"+fw.hfuse+":m",
-                                  "-U", "efuse:w:"+fw.efuse+":m",
-    };
+    // build up command string
+    ArrayList<String> cmd = new ArrayList<String>();
+    cmd.add( binpath );
+    cmd.add("-C");  cmd.add(confpath);
+    cmd.add("-p");  cmd.add(fw.mcu);
 
-    /*
-    // open the port so the Arduino resets (and keep it open)
-    Serial tmpport = new Serial(papplet, portName, 19200);
-    reflashDialog.updateMsg("opening port '"+portName+"'...");
-    delay(3000);
-    */
+    String hexpath = fw.hex;
+    String eeppath = fw.eep;
+    if( !customFw ) {
+      hexpath = cmdpath +sep+ "firmwares" +sep+ hexpath;
+      eeppath = cmdpath +sep+ "firmwares" +sep+ eeppath;
+    }
+
+    cmd.add("-U");  cmd.add("flash:w:"+hexpath+":i");
+    if( fw.eep != null && !fw.eep.equals("") ) {
+      cmd.add("-U");  cmd.add("eeprom:w:"+eeppath+":i");
+    }
+
+    cmd.add("-U");  cmd.add("lfuse:w:"+fw.lfuse+":m");
+    cmd.add("-U");  cmd.add("hfuse:w:"+fw.hfuse+":m");
+
+    if( ispType.equals("arduinoisp")  ) {
+      cmd.add("-c");  cmd.add("stk500v1");
+      cmd.add("-b");  cmd.add("19200");
+      cmd.add("-P");  cmd.add(portName);
+    }
+    else if( ispType.equals("avrispmkii") ) {
+      cmd.add("-c");  cmd.add("avrispmkii");
+      cmd.add("-P");  cmd.add("usb");
+    }
+    else if( ispType.equals("usbtiny") ) {
+      cmd.add("-c");  cmd.add("usbtiny");
+    }
 
     // run the actual avrdude command
-    reflashDialog.updateMsg("running avrdude command...");
-    String output = runAvrdudeCmd( cmd );
-
+    String output = runAvrdudeCmd( cmd.toArray(new String[0]) );
     
     if( output.indexOf("can't open device") != -1 ) {
-      reflashDialog.updateMsg("Can't open serial device, try another");
+      reflashDialog.updateMsg("Can't open serial device, try another.");
     }
     else if( output.indexOf("Device is not responding") != -1 ) {
       reflashDialog.updateMsg("Programmer not responding. Check connections.");
     }
     else if( output.indexOf("programmer is not responding") != -1 ) {
-      reflashDialog.updateMsg("Programmer not responding. ArduinoISP loaded?");
+      reflashDialog.updateMsg("Programmer not responding.");
     }
     else if( output.indexOf("Expected signature") != -1 ) { 
       reflashDialog.updateMsg("Wrong chip type detected. Use other firmware.");
     }
     else if( output.indexOf("verification error") != -1 ) {
-        reflashDialog.updateMsg("Verification error, bad wiring?");
+      reflashDialog.updateMsg("Verification error, bad wiring?");
     }
     else if( output.indexOf("Yikes!  Invalid device signature.") != -1 ){
       reflashDialog.updateMsg("No chip detected. Check connections.");
     }
     else if( output.indexOf("initialization failed") != -1 ) { 
-      reflashDialog.updateMsg("Programmer init failure. ArduinoISP loaded?");
+      reflashDialog.updateMsg("Programmer init failure. Bad connection?");
     }
     else if( output.indexOf("protocol error") != -1 ) { 
-      reflashDialog.updateMsg("Programmer protocol error. ArduinoISP loaded?");
+      reflashDialog.updateMsg("Programmer protocol error. Bad connection?");
     }
     else if( output.indexOf("not in sync") != -1 ) { 
-      reflashDialog.updateMsg("Programmer sync error. ArduinoISP loaded?");
+      reflashDialog.updateMsg("Programmer sync error. Bad connection?");
+    }
+    else if( output.indexOf("Could not find USB device") != -1 ) { 
+      reflashDialog.updateMsg("Could not find USB programmer.");
+    }
+    else if( output.indexOf("No such file or directory") != -1 ) { 
+      reflashDialog.updateMsg("Could not find HEX firmware file.");
     }
     else if( output.indexOf("done.") != -1 ) {
       reflashDialog.updateMsg("Reflashing Done!");
@@ -305,36 +354,118 @@ public class ReflashDialog extends JDialog {
       MetalLookAndFeel.setCurrentTheme(new DefaultMetalTheme());
       UIManager.setLookAndFeel( new MetalLookAndFeel() );
     } catch(Exception e) { }  // don't really care if it doesn't work
+    
+    fc = new JFileChooser( System.getProperty("user.home")  ); 
+    fc.setFileFilter( new javax.swing.filechooser.FileFilter() {
+        public boolean accept(File f) {
+          if(f.isDirectory()) return true;
+          if (f.getName().toLowerCase().endsWith("hex") ) return true;
+          return false;
+        }
+        public String getDescription() { return "HEX files";  }
+      }
+      );
 
     openReflashDialog();
   }
 
-
-  public void openReflashDialog() {
-
+  //
+  // Build GUI for the ISP 
+  //
+  public void makeIspPanel(JPanel isppPanel) {
     String[] portNames = listPorts();
-    String[] firmNames = getFirmwareNames();
 
     String lastPortName = portName;
-    String lastFirmName = firmName;
+    int pidx = 0;
 
-    int pidx =0, fidx = 0;
     for( int i=0; i<portNames.length; i++) 
       if( portNames[i].equals(lastPortName) ) pidx = i;
-    for( int i=0; i<firmNames.length; i++)
-      if( firmNames[i].equals(lastFirmName) ) fidx = i;
+
+    JLabel portText = new JLabel("Select type of ISP programmer:");
+
+    ispButtonAvrIspMkII = new JRadioButton("AVR-ISP mkII");
+    ispButtonUsbTiny    = new JRadioButton("USBtiny");
+    ispButtonArduinoIsp = new JRadioButton("ArduinoISP on Arduino, on port:");
+
+    ButtonGroup group = new ButtonGroup();
+    group.add( ispButtonAvrIspMkII );
+    group.add( ispButtonUsbTiny );
+    group.add( ispButtonArduinoIsp );
+    ispButtonAvrIspMkII.setSelected(true);
 
     portChoices = new JComboBox(portNames);
     portChoices.setSelectedIndex( pidx );
 
+    JPanel butpanel = new JPanel(new GridLayout(0,1));
+    butpanel.add( ispButtonAvrIspMkII );
+    butpanel.add( ispButtonUsbTiny );
+
+    JPanel arduinoPanel = new JPanel(new GridLayout(1,0));
+    arduinoPanel.add( ispButtonArduinoIsp );
+    arduinoPanel.add( portChoices );
+    butpanel.add(arduinoPanel);
+
+    isppPanel.add( portText, BorderLayout.NORTH );
+    isppPanel.add( butpanel );
+
+  }
+
+  //
+  //
+  public String getFirmFile( String title ) { 
+    fc.setDialogTitle( title );
+    if(fc.showOpenDialog(reflashDialog) != JFileChooser.APPROVE_OPTION) 
+      return null;
+    return fc.getSelectedFile().getAbsolutePath();
+  }
+
+  //
+  //
+  public void openReflashDialog() {
+
+    String[] firmNames = getFirmwareNames();
+
+    String lastFirmName = fw.name; //firmName;
+
+    int fidx = 0;
+    for( int i=0; i<firmNames.length; i++)
+      if( firmNames[i].equals(lastFirmName) ) fidx = i;
+
     firmChoices = new JComboBox(firmNames);
     firmChoices.setSelectedIndex( fidx );
+
+    firmChoices.addActionListener( new ActionListener() {
+        public void actionPerformed(ActionEvent e) { 
+          String selstr = (String)firmChoices.getSelectedItem();
+          int seli = firmChoices.getSelectedIndex();
+
+          customFw = false; // default
+
+          if( selstr.startsWith("Custom ATtiny85") ) {      // FIXME: hack
+            firmwareCustom85.hex = getFirmFile("Open Hex file for ATiny85");
+            customFw = true;
+          }
+          else if( selstr.startsWith("Custom ATtiny45") ) { // FIXME: hack
+            firmwareCustom45.hex = getFirmFile("Open Hex file for ATiny45");
+            customFw = true;
+          }
+          else if( selstr.startsWith("Custom ATtiny84") ) { // FIXME: hack
+            firmwareCustom84.hex = getFirmFile("Open Hex file for ATiny84");
+            customFw = true;
+          }
+          
+          fw = firmwares[seli];
+          firmFileStr.setText( "using: "+ fw.hex );
+
+        } // actionPerformed
+      }
+      );
 
     JPanel msgtPanel = new JPanel();
     JPanel msgbPanel = new JPanel();
     JPanel ctrlPanel = new JPanel();
     JPanel firmPanel = new JPanel();
-    JPanel portPanel = new JPanel();
+    JPanel isppPanel = new JPanel();
     JPanel statPanel = new JPanel();
     JPanel buttPanel = new JPanel();
     JPanel mainPanel = new JPanel();
@@ -344,33 +475,35 @@ public class ReflashDialog extends JDialog {
     msgbPanel.setLayout( new BorderLayout() );
     ctrlPanel.setLayout( new BoxLayout(ctrlPanel,BoxLayout.Y_AXIS) );
     firmPanel.setLayout( new BorderLayout() );
-    portPanel.setLayout( new BorderLayout() );
+    isppPanel.setLayout( new BorderLayout() );
     mainPanel.setLayout( new BorderLayout() );
 
     ctrlPanel.setBorder(new EmptyBorder(15,15,15,15));
     firmPanel.setBorder(new EmptyBorder(15,15,15,15));
-    portPanel.setBorder(new EmptyBorder(15,15,15,15));
+    isppPanel.setBorder(new EmptyBorder(15,15,15,15));
     mainPanel.setBorder(new EmptyBorder(15,15,15,15));
     
 
     JLabel msgtText = new JLabel("Welcome to BlinkM Reflasher Tool");
-    msgbText = new JLabel("<html>Load the ArduinoISP sketch onto your Arduino before continuing.</html>");
+    msgbText = new JLabel("<html>For ArduinoISP, load sketch onto Arduino before continuing.</html>");
     JLabel firmText = new JLabel("Select BlinkM firmware");
-    JLabel portText = new JLabel("Select port of ArduinoISP");
+    firmFileStr = new JLabel("");
 
-    reflashButton = new JButton("Reflash");
+    reflashButton = new JButton("  Reflash  ");
 
     msgtPanel.add( msgtText );
     msgbPanel.add( msgbText );
 
     firmPanel.add( firmText, BorderLayout.NORTH );
     firmPanel.add( firmChoices );
-    portPanel.add( portText, BorderLayout.NORTH );
-    portPanel.add( portChoices );
+    firmPanel.add( firmFileStr, BorderLayout.SOUTH );
+
+    makeIspPanel( isppPanel );
+
     buttPanel.add( reflashButton );
 
     ctrlPanel.add( firmPanel );
-    ctrlPanel.add( portPanel );
+    ctrlPanel.add( isppPanel );
     ctrlPanel.add( buttPanel );
 
     mainPanel.add( msgtPanel, BorderLayout.NORTH );
@@ -379,8 +512,21 @@ public class ReflashDialog extends JDialog {
 
     reflashButton.addActionListener( new ActionListener() { 
         public void actionPerformed(ActionEvent e) {
-          firmName = (String) firmChoices.getSelectedItem();
-          portName = (String) portChoices.getSelectedItem();
+          
+          fw = firmwares[ firmChoices.getSelectedIndex() ];
+          
+          if( ispButtonAvrIspMkII.isSelected() ) {
+            ispType = "avrispmkii";
+            portName = "avrispmkII";
+          }
+          else if( ispButtonUsbTiny.isSelected() ) {
+            ispType = "usbtiny";
+            portName = "usbtiny";
+          } 
+          else if( ispButtonArduinoIsp.isSelected() ) { 
+            ispType = "arduinoisp";
+            portName = (String) portChoices.getSelectedItem();
+          }   
 
           setReflashing(true);
           new Thread( new Programmer() ).start();
@@ -389,7 +535,7 @@ public class ReflashDialog extends JDialog {
       });
     
     JDialog dialog = new JDialog();
-    dialog.setTitle("Reflash BlinkM with ArduinoISP");
+    dialog.setTitle("ReflashBlinkM!");
 
     // handle window close events
     dialog.addWindowListener(new WindowAdapter() {
@@ -409,15 +555,19 @@ public class ReflashDialog extends JDialog {
 
   }
 
+  //
   void updateMsg(String s) {
     if(debug) println(s);
     msgbText.setText("<html>"+s+"</html>");
   }
 
+  //
   void setReflashing(boolean b) { 
       reflashing = b;
       reflashButton.setEnabled( !b );
   }
+
+  //
   boolean isReflashing() {
       return reflashing;
   }
@@ -452,6 +602,41 @@ public class ReflashDialog extends JDialog {
 
 } // ReflashDialog
 
+
+
+
+// -------------------------------------------------------------------
+// unused, but perhaps useful to reflect upon
+//
+
+          //firmName = (String) firmChoices.getSelectedItem();
+
+          //int fwid = -1;
+          //for( int i = 0; i<firmwares.length; i++ ) 
+          //  if( firmwares[i].name.equals(firmName) ) fwid = i;
+          //fw = firmwares[fwid];  // FIXME: check fwid not -1
+
+    /*
+    String[] cmd = new String[] { binpath, 
+                                  "-C", confpath,
+                                  "-c", "stk500v1", 
+                                  "-b", "19200",
+                                  "-P", portName,
+                                  "-p", fw.mcu,
+                                  "-U", "flash:w:"+hexpath+":i",
+                                  "-U", "eeprom:w:"+eeppath+":i",
+                                  "-U", "lfuse:w:"+fw.lfuse+":m",
+                                  "-U", "hfuse:w:"+fw.hfuse+":m",
+                                  "-U", "efuse:w:"+fw.efuse+":m",
+    };
+    */
+
+    /*
+    // open the port so the Arduino resets (and keep it open)
+    Serial tmpport = new Serial(papplet, portName, 19200);
+    reflashDialog.updateMsg("opening port '"+portName+"'...");
+    delay(3000);
+    */
 
 /**
  * will not use this, but it shows how static hashmaps are done
