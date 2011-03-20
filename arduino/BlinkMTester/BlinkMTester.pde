@@ -14,7 +14,7 @@
  * Note: This sketch DOES NOT reset the I2C address of the BlinkM.
  *       If you want to change the I2C address use the 'A<n>' command.
  *
- * 2007-8, Tod E. Kurt, ThingM, http://thingm.com/
+ * 2007-10, Tod E. Kurt, ThingM, http://thingm.com/
  *
  */
 
