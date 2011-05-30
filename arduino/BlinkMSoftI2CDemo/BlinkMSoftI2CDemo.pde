@@ -47,10 +47,4 @@ void loop()
   delay(1000);
 }
 
-void BlinkM_off(byte addr)
-{
-  BlinkM_stopScript( addr );
-  BlinkM_setFadeSpeed(addr,10);
-  BlinkM_setRGB(addr, 0,0,0 );
-}
 
