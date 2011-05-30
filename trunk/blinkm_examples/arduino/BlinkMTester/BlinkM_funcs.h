@@ -320,6 +320,14 @@ static void BlinkM_stopScript(byte addr)
   Wire.endTransmission();
 }
 
+static void BlinkM_off(uint8_t addr)
+{
+  BlinkM_stopScript( addr );
+  BlinkM_setFadeSpeed(addr,10);
+  BlinkM_setRGB(addr, 0,0,0 );
+}
+
+
 //
 static void BlinkM_setScriptLengthReps(byte addr, byte script_id, 
                                        byte len, byte reps)
