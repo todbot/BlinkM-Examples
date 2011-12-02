@@ -26,7 +26,7 @@
  * I2C c -- SCK -- blue  -- Analog In 5
  * 
  *
- * 2007-9, Tod E. Kurt, ThingM, http://thingm.com/
+ * 2007-11, Tod E. Kurt, ThingM, http://thingm.com/
  *
  */
 
@@ -97,8 +97,8 @@ void lookForBlinkM()
 // called when address is found in BlinkM_scanI2CBus()
 void i2cScanResult( byte addr, byte result )
 {
-    Serial.print(addr,BYTE); 
-    Serial.print(result,BYTE);
+    Serial.write(addr); 
+    Serial.write(result);
 }
 
 void loop()
@@ -118,7 +118,7 @@ void loop()
 
   if( addr == 128 ) { // 128 == i2c scan command
     BlinkM_scanI2CBus( cmd[0], cmd[1], i2cScanResult);
-    Serial.print(128,BYTE);
+    Serial.write(128);
   }
   else { // normal transaction
     
@@ -143,7 +143,7 @@ void loop()
         byte resp[16];
         int rc = BlinkM_receiveBytes(addr, resp, recvlen);
         for( int i=0; i<recvlen; i++) 
-            Serial.print(resp[i],BYTE);
+            Serial.write(resp[i]);
     }
     
     for(int i=0; i< serBufLen; i++) {

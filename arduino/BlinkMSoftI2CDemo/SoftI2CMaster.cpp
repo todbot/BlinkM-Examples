@@ -2,14 +2,18 @@
  * SoftI2CMaster.cpp -- Multi-instance software I2C Master library
  * 
  * 
- * 2010 Tod E. Kurt, http://todbot.com/blog/
+ * 2010-11 Tod E. Kurt, http://todbot.com/blog/
  *
- * This code takes some tricksk from:
+ * This code takes some tricks from:
  *  http://codinglab.blogspot.com/2008/10/i2c-on-avr-using-bit-banging.html
  */
 
-#include "WConstants.h"
-#include "pins_arduino.h"
+#if (ARDUINO >= 100)
+#include <Arduino.h>
+#else
+#include <WProgram.h>
+#endif
+
 #include "SoftI2CMaster.h"
 
 #include <avr/delay.h>

@@ -1,7 +1,7 @@
 
 BlinkM Example Code   
 ===================
--- 20100701 -- Tod E. Kurt, http://thingm.com/
+-- 20111201 -- Tod E. Kurt, http://thingm.com/
 
 This zip file "blinkm_examples.zip" available from 
 http://blinkm-projects.google.com and http://blinkm.thingm.com 
@@ -98,5 +98,8 @@ history
              support in BlinkM_funcs, updated BlinkMTester for MaxM,
              made BlinkMCommunicator faster, added BlinkMScriptTool, 
              added BlinkMColorList, other minor updates
+- 20111201 - Updated BlinkM_funcs.h, BlinkMTester and BlinkMCommunicator to work 
+             with Arduino 1.0 (breaks compatibility with <= Arduino 0023)
+
 
              

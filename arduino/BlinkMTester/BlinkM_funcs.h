@@ -9,9 +9,9 @@
  *       it saves about 1.5 kbyte in code space in final compiled sketch.  
  *       A C++ library of this costs a 1kB more.
  *
- * 2007-8, Tod E. Kurt, ThingM, http://thingm.com/
+ * 2007-11, Tod E. Kurt, ThingM, http://thingm.com/
  *
- * version: 20081101
+ * version: 20121201
  *
  * history:
  *  20080101 - initial release
@@ -21,12 +21,12 @@
  *  20090121 - added I2C bus scan functions, has dependencies on private 
  *             functions inside Wire library, so might break in the future
  *  20100420 - added BlinkM_startPower and _stopPower
+ *  20111201 - updated to work with Arduino 1.0 (breaks compatibility with Arduino <= 0023)
  *
  */
 
-#include "WProgram.h"
-#include "wiring.h"
-#include "Wire.h"
+#include <Arduino.h>
+
 
 extern "C" { 
 #include "utility/twi.h"  // from Wire library, so we can do bus scanning
@@ -86,27 +86,36 @@ static int8_t BlinkM_findFirstI2CDevice()
 // FIXME: make this more Arduino-like
 static void BlinkM_startPowerWithPins(byte pwrpin, byte gndpin)
 {
+  pinMode( pwrpin, OUTPUT);
+  pinMode( gndpin, OUTPUT);
+
+  digitalWrite( pwrpin, HIGH );
+  digitalWrite( gndpin, LOW );
+  /*
   DDRC |= _BV(pwrpin) | _BV(gndpin);  // make outputs
   PORTC &=~ _BV(gndpin);
   PORTC |=  _BV(pwrpin);
+  */
 }
 
 // FIXME: make this more Arduino-like
 static void BlinkM_stopPowerWithPins(byte pwrpin, byte gndpin)
 {
-  DDRC &=~ (_BV(pwrpin) | _BV(gndpin));
+  //DDRC &=~ (_BV(pwrpin) | _BV(gndpin));
+  digitalWrite( pwrpin, LOW );
+  digitalWrite( gndpin, LOW );
 }
 
 //
 static void BlinkM_startPower()
 {
-  BlinkM_startPowerWithPins( PORTC3, PORTC2 );
+  BlinkM_startPowerWithPins( A3, A2 );
 }
 
 //
 static void BlinkM_stopPower()
 {
-  BlinkM_stopPowerWithPins( PORTC3, PORTC2 );
+  BlinkM_stopPowerWithPins( A3, A2 );
 }
 
 // General version of BlinkM_beginWithPower().
@@ -122,7 +131,7 @@ static void BlinkM_beginWithPowerPins(byte pwrpin, byte gndpin)
 // FIXME: make this more Arduino-like
 static void BlinkM_beginWithPower()
 {
-  BlinkM_beginWithPowerPins( PORTC3, PORTC2 );
+  BlinkM_beginWithPowerPins( A3, A2 );
 }
 
 // sends a generic command
@@ -130,7 +139,7 @@ static void BlinkM_sendCmd(byte addr, byte* cmd, int cmdlen)
 {
   Wire.beginTransmission(addr);
   for( byte i=0; i<cmdlen; i++) 
-    Wire.send(cmd[i]);
+    Wire.write(cmd[i]);
   Wire.endTransmission();
 }
 
@@ -142,7 +151,7 @@ static int BlinkM_receiveBytes(byte addr, byte* resp, byte len)
   Wire.requestFrom(addr, len);
   if( Wire.available() ) {
     for( int i=0; i<len; i++) 
-      resp[i] = Wire.receive();
+      resp[i] = Wire.read();
     return 0;
   }
   return -1;
@@ -153,11 +162,11 @@ static int BlinkM_receiveBytes(byte addr, byte* resp, byte len)
 static void BlinkM_setAddress(byte newaddress)
 {
   Wire.beginTransmission(0x00);  // general call (broadcast address)
-  Wire.send('A');
-  Wire.send(newaddress);
-  Wire.send(0xD0);
-  Wire.send(0x0D);  // dood!
-  Wire.send(newaddress);
+  Wire.write('A');
+  Wire.write(newaddress);
+  Wire.write(0xD0);
+  Wire.write(0x0D);  // dood!
+  Wire.write(newaddress);
   Wire.endTransmission();
   delay(50); // just in case
 }
@@ -169,11 +178,11 @@ static void BlinkM_setAddress(byte newaddress)
 static int BlinkM_getAddress(byte addr)
 {
   Wire.beginTransmission(addr);
-  Wire.send('a');
+  Wire.write('a');
   Wire.endTransmission();
   Wire.requestFrom(addr, (byte)1);  // general call
   if( Wire.available() ) {
-    byte b = Wire.receive();
+    byte b = Wire.read();
     return b;
   }
   return -1;
@@ -183,12 +192,12 @@ static int BlinkM_getAddress(byte addr)
 static int BlinkM_getVersion(byte addr)
 {
   Wire.beginTransmission(addr);
-  Wire.send('Z');
+  Wire.write('Z');
   Wire.endTransmission();
   Wire.requestFrom(addr, (byte)2);
   if( Wire.available() ) {
-    byte major_ver = Wire.receive();
-    byte minor_ver = Wire.receive();
+    byte major_ver = Wire.read();
+    byte minor_ver = Wire.read();
     return (major_ver<<8) + minor_ver;
   }
   return -1;
@@ -217,8 +226,8 @@ static int BlinkM_checkAddress(byte addr)
 static void BlinkM_setFadeSpeed(byte addr, byte fadespeed)
 {
   Wire.beginTransmission(addr);
-  Wire.send('f');
-  Wire.send(fadespeed);
+  Wire.write('f');
+  Wire.write(fadespeed);
   Wire.endTransmission();  
 }
 
@@ -228,8 +237,8 @@ static void BlinkM_setFadeSpeed(byte addr, byte fadespeed)
 static void BlinkM_setTimeAdj(byte addr, byte timeadj)
 {
   Wire.beginTransmission(addr);
-  Wire.send('t');
-  Wire.send(timeadj);
+  Wire.write('t');
+  Wire.write(timeadj);
   Wire.endTransmission();  
 }
 
@@ -237,10 +246,10 @@ static void BlinkM_setTimeAdj(byte addr, byte timeadj)
 static void BlinkM_fadeToRGB(byte addr, byte red, byte grn, byte blu)
 {
   Wire.beginTransmission(addr);
-  Wire.send('c');
-  Wire.send(red);
-  Wire.send(grn);
-  Wire.send(blu);
+  Wire.write('c');
+  Wire.write(red);
+  Wire.write(grn);
+  Wire.write(blu);
   Wire.endTransmission();
 }
 
@@ -248,10 +257,10 @@ static void BlinkM_fadeToRGB(byte addr, byte red, byte grn, byte blu)
 static void BlinkM_fadeToHSB(byte addr, byte hue, byte saturation, byte brightness)
 {
   Wire.beginTransmission(addr);
-  Wire.send('h');
-  Wire.send(hue);
-  Wire.send(saturation);
-  Wire.send(brightness);
+  Wire.write('h');
+  Wire.write(hue);
+  Wire.write(saturation);
+  Wire.write(brightness);
   Wire.endTransmission();
 }
 
@@ -259,10 +268,10 @@ static void BlinkM_fadeToHSB(byte addr, byte hue, byte saturation, byte brightne
 static void BlinkM_setRGB(byte addr, byte red, byte grn, byte blu)
 {
   Wire.beginTransmission(addr);
-  Wire.send('n');
-  Wire.send(red);
-  Wire.send(grn);
-  Wire.send(blu);
+  Wire.write('n');
+  Wire.write(red);
+  Wire.write(grn);
+  Wire.write(blu);
   Wire.endTransmission();
 }
 
@@ -270,20 +279,20 @@ static void BlinkM_setRGB(byte addr, byte red, byte grn, byte blu)
 static void BlinkM_fadeToRandomRGB(byte addr, byte rrnd, byte grnd, byte brnd)
 {
   Wire.beginTransmission(addr);
-  Wire.send('C');
-  Wire.send(rrnd);
-  Wire.send(grnd);
-  Wire.send(brnd);
+  Wire.write('C');
+  Wire.write(rrnd);
+  Wire.write(grnd);
+  Wire.write(brnd);
   Wire.endTransmission();
 }
 // Fades to a random HSB color
 static void BlinkM_fadeToRandomHSB(byte addr, byte hrnd, byte srnd, byte brnd)
 {
   Wire.beginTransmission(addr);
-  Wire.send('H');
-  Wire.send(hrnd);
-  Wire.send(srnd);
-  Wire.send(brnd);
+  Wire.write('H');
+  Wire.write(hrnd);
+  Wire.write(srnd);
+  Wire.write(brnd);
   Wire.endTransmission();
 }
 
@@ -291,13 +300,13 @@ static void BlinkM_fadeToRandomHSB(byte addr, byte hrnd, byte srnd, byte brnd)
 static void BlinkM_getRGBColor(byte addr, byte* r, byte* g, byte* b)
 {
   Wire.beginTransmission(addr);
-  Wire.send('g');
+  Wire.write('g');
   Wire.endTransmission();
   Wire.requestFrom(addr, (byte)3);
   if( Wire.available() ) {
-    *r = Wire.receive();
-    *g = Wire.receive();
-    *b = Wire.receive();
+    *r = Wire.read();
+    *g = Wire.read();
+    *b = Wire.read();
   }
 }
 
@@ -305,10 +314,10 @@ static void BlinkM_getRGBColor(byte addr, byte* r, byte* g, byte* b)
 static void BlinkM_playScript(byte addr, byte script_id, byte reps, byte pos)
 {
   Wire.beginTransmission(addr);
-  Wire.send('p');
-  Wire.send(script_id);
-  Wire.send(reps);
-  Wire.send(pos);
+  Wire.write('p');
+  Wire.write(script_id);
+  Wire.write(reps);
+  Wire.write(pos);
   Wire.endTransmission();
 }
 
@@ -316,7 +325,7 @@ static void BlinkM_playScript(byte addr, byte script_id, byte reps, byte pos)
 static void BlinkM_stopScript(byte addr)
 {
   Wire.beginTransmission(addr);
-  Wire.send('o');
+  Wire.write('o');
   Wire.endTransmission();
 }
 
@@ -333,10 +342,10 @@ static void BlinkM_setScriptLengthReps(byte addr, byte script_id,
                                        byte len, byte reps)
 {
   Wire.beginTransmission(addr);
-  Wire.send('L');
-  Wire.send(script_id);
-  Wire.send(len);
-  Wire.send(reps);
+  Wire.write('L');
+  Wire.write(script_id);
+  Wire.write(len);
+  Wire.write(reps);
   Wire.endTransmission();
 }
 
@@ -346,17 +355,17 @@ static void BlinkM_readScriptLine(byte addr, byte script_id,
                                   byte pos, blinkm_script_line* script_line)
 {
   Wire.beginTransmission(addr);
-  Wire.send('R');
-  Wire.send(script_id);
-  Wire.send(pos);
+  Wire.write('R');
+  Wire.write(script_id);
+  Wire.write(pos);
   Wire.endTransmission();
   Wire.requestFrom(addr, (byte)5);
   while( Wire.available() < 5 ) ; // FIXME: wait until we get 7 bytes
-  script_line->dur    = Wire.receive();
-  script_line->cmd[0] = Wire.receive();
-  script_line->cmd[1] = Wire.receive();
-  script_line->cmd[2] = Wire.receive();
-  script_line->cmd[3] = Wire.receive();
+  script_line->dur    = Wire.read();
+  script_line->cmd[0] = Wire.read();
+  script_line->cmd[1] = Wire.read();
+  script_line->cmd[2] = Wire.read();
+  script_line->cmd[3] = Wire.read();
 }
 
 //
@@ -370,14 +379,14 @@ static void BlinkM_writeScriptLine(byte addr, byte script_id,
   Serial.print(" arg1:"); Serial.println(arg1,HEX);
 #endif
   Wire.beginTransmission(addr);
-  Wire.send('W');
-  Wire.send(script_id);
-  Wire.send(pos);
-  Wire.send(dur);
-  Wire.send(cmd);
-  Wire.send(arg1);
-  Wire.send(arg2);
-  Wire.send(arg3);
+  Wire.write('W');
+  Wire.write(script_id);
+  Wire.write(pos);
+  Wire.write(dur);
+  Wire.write(cmd);
+  Wire.write(arg1);
+  Wire.write(arg2);
+  Wire.write(arg3);
   Wire.endTransmission();
 
 }
@@ -405,26 +414,31 @@ static void BlinkM_setStartupParams(byte addr, byte mode, byte script_id,
                                     byte reps, byte fadespeed, byte timeadj)
 {
   Wire.beginTransmission(addr);
-  Wire.send('B');
-  Wire.send(mode);             // default 0x01 == Play script
-  Wire.send(script_id);        // default 0x00 == script #0
-  Wire.send(reps);             // default 0x00 == repeat infinitely
-  Wire.send(fadespeed);        // default 0x08 == usually overridden by sketch 
-  Wire.send(timeadj);          // default 0x00 == sometimes overridden by sketch
+  Wire.write('B');
+  Wire.write(mode);             // default 0x01 == Play script
+  Wire.write(script_id);        // default 0x00 == script #0
+  Wire.write(reps);             // default 0x00 == repeat infinitely
+  Wire.write(fadespeed);        // default 0x08 == usually overridden by sketch 
+  Wire.write(timeadj);          // default 0x00 == sometimes overridden by sketch
   Wire.endTransmission();
 } 
 
+//
+static void BlinkM_setStartupParamsDefault( byte addr )
+{
+  BlinkM_setStartupParams( addr, 0x01, 0x00, 0x00, 0x08, 0x00 );
+}
 
 // Gets digital inputs of the BlinkM
 // returns -1 on failure
 static int BlinkM_getInputsO(byte addr)
 {
   Wire.beginTransmission(addr);
-  Wire.send('i');
+  Wire.write('i');
   Wire.endTransmission();
   Wire.requestFrom(addr, (byte)1);
   if( Wire.available() ) {
-    byte b = Wire.receive();
+    byte b = Wire.read();
     return b; 
   }
   return -1;
@@ -436,16 +450,56 @@ static int BlinkM_getInputsO(byte addr)
 static int BlinkM_getInputs(byte addr, byte inputs[])
 {
   Wire.beginTransmission(addr);
-  Wire.send('i');
+  Wire.write('i');
   Wire.endTransmission();
   Wire.requestFrom(addr, (byte)4);
   while( Wire.available() < 4 ) ; // FIXME: wait until we get 4 bytes
     
-  inputs[0] = Wire.receive();
-  inputs[1] = Wire.receive();
-  inputs[2] = Wire.receive();
-  inputs[3] = Wire.receive();
+  inputs[0] = Wire.read();
+  inputs[1] = Wire.read();
+  inputs[2] = Wire.read();
+  inputs[3] = Wire.read();
 
   return 0;
+}
+
+//
+static int BlinkM_doFactoryReset() 
+{
+  BlinkM_setAddress( 0x09 );
+
+  delay(30);
+
+  BlinkM_setStartupParamsDefault( 0x09 );
+
+  delay(30);
+
+  //  the example script we're going to write
+  blinkm_script_line script1_lines[] = {
+    {  1,  {'f',   10,  00,  00}},  // set fade speed to 10
+    { 100, {'c', 0xff,0xff,0xff}},  // white
+    {  50, {'c', 0xff,0x00,0x00}},  // red
+    {  50, {'c', 0x00,0xff,0x00}},  // green
+    {  50, {'c', 0x00,0x00,0xff}},  // blue 
+    {  50, {'c', 0x00,0x00,0x00}},  // off
+  };
+  int script1_len = 6;  // number of script lines above
+  
+  BlinkM_writeScript( 0x09, 0, script1_len, 0, script1_lines);
+  /*    
+    BlinkMScript script = new BlinkMScript();
+    script.add( new BlinkMScriptLine(  1, 'f',   10,   0,   0) );
+    script.add( new BlinkMScriptLine(100, 'c', 0xff,0xff,0xff) );
+    script.add( new BlinkMScriptLine( 50, 'c', 0xff,0x00,0x00) );
+    script.add( new BlinkMScriptLine( 50, 'c', 0x00,0xff,0x00) );
+    script.add( new BlinkMScriptLine( 50, 'c', 0x00,0x00,0xff) );
+    script.add( new BlinkMScriptLine( 50, 'c', 0x00,0x00,0x00) );
+    for( int i=0; i< 49-6; i++ ) {  // FIXME:  make this length correct
+      script.add( new BlinkMScriptLine( 0, 'c', 0,0,0 ) );
+    }
+
+    writeScript( addr, script);
+  */
+  
 }
 

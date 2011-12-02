@@ -14,7 +14,7 @@
  * Note: This sketch DOES NOT reset the I2C address of the BlinkM.
  *       If you want to change the I2C address use the 'A<n>' command.
  *
- * 2007-10, Tod E. Kurt, ThingM, http://thingm.com/
+ * 2007-11, Tod E. Kurt, ThingM, http://thingm.com/
  *
  */
 
@@ -24,11 +24,15 @@
 
 #include <avr/pgmspace.h>  // for progmem stuff
 
-#define BLINKM_ARDUINO_POWERED 1
+// set this if you're plugging a BlinkM directly into an Arduino,
+// into the standard position on analog in pins 2,3,4,5
+// otherwise you can set it to false or just leave it alone
+const boolean BLINKM_ARDUINO_POWERED = true;
 
 byte blinkm_addr = 0x09; // the default address of all BlinkMs
 
-char serInStr[30];  // array that will hold the serial input string
+const int serStrLen = 30;
+char serInStr[ serStrLen ];  // array that will hold the serial input string
 
 const char helpstr[] PROGMEM = 
   "\nBlinkMTester!\n"
@@ -47,6 +51,7 @@ const char helpstr[] PROGMEM =
   "'Z'  get BlinkM version\n"
   "'i'  get input values\n"
   "'s'/'S'  scan i2c bus for 1st BlinkM / search for devices\n"
+  "'R'  return BlinkM to factory settings\n"
   "'?'  for this help msg\n\n"
   ;
 //const char badAddrStr[] PROGMEM = 
@@ -60,7 +65,7 @@ void printProgStr(const prog_char str[])
   char c;
   if(!str) return;
   while((c = pgm_read_byte(str++)))
-    Serial.print(c,BYTE);
+    Serial.write(c);
 }
 
 void help()
@@ -217,8 +222,8 @@ void loop()
       num = BlinkM_getVersion(blinkm_addr);
       if( num == -1 )
         Serial.println("couldn't get version");
-      Serial.print( (char)(num>>8), BYTE ); 
-      Serial.println( (char)(num&0xff),BYTE );
+      Serial.print( (char)(num>>8) ); 
+      Serial.println( (char)(num&0xff) );
     }
     else if( cmd == 'B' ) {
       Serial.print("Set startup mode:"); Serial.println(num,DEC);
@@ -241,6 +246,11 @@ void loop()
       BlinkM_scanI2CBus(1,100, scanfunc);
       Serial.println();
     }
+    else if( cmd == 'R' ) {
+      Serial.println("Doing Factory Reset");
+      blinkm_addr = 0x09;
+      BlinkM_doFactoryReset();
+    }
     else { 
       Serial.println("Unrecognized cmd");
     }
@@ -261,7 +271,7 @@ uint8_t readSerialString()
 
   memset( serInStr, 0, sizeof(serInStr) ); // set it all to zero
   int i = 0;
-  while (Serial.available()) {
+  while(Serial.available() && i<serStrLen ) {
     serInStr[i] = Serial.read();   // FIXME: doesn't check buffer overrun
     i++;
   }
