@@ -11,7 +11,7 @@
  *
  * 2007-11, Tod E. Kurt, ThingM, http://thingm.com/
  *
- * version: 20121201
+ * version: 20111201
  *
  * history:
  *  20080101 - initial release
