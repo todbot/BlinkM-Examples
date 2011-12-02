@@ -14,11 +14,15 @@ static void BlinkM_begin()
     // nothing to do here yet
 }
 
-/*
-static void BlinkM_beginWithPower() {
 
+static void BlinkM_beginWithPower(byte pwrpin, byte gndpin) 
+{
+    pinMode(pwrpin, OUTPUT);
+    pinMode(gndpin, OUTPUT);
+    digitalWrite(pwrpin, HIGH);
+    digitalWrite(gndpin, LOW);
 }
-*/
+
 
 // -----------------------------------------------------------------------------
 static void BlinkM_sendCmd3( uint8_t addr, uint8_t c, uint8_t a1, uint8_t a2, uint8_t a3 )
