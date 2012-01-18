@@ -1,7 +1,7 @@
 /*
  * SoftI2CMaster.h -- Multi-instance software I2C Master library
  * 
- * 2010 Tod E. Kurt, http://todbot.com/blog/
+ * 2010-2012 Tod E. Kurt, http://todbot.com/blog/
  *
  */
 
@@ -10,20 +10,22 @@
 
 #include <inttypes.h>
 
-#define _SOFTI2CMASTER_VERSION 10 // software version of this library
+#define _SOFTI2CMASTER_VERSION 11  // software version of this library
+
 
 class SoftI2CMaster
 {
+
 private:
   // per object data
   uint8_t _sdaPin;
   uint8_t _sclPin;
   uint8_t _sdaBitMask;
   uint8_t _sclBitMask;
-  volatile uint8_t *_sdaPortRegister;
-  volatile uint8_t *_sclPortRegister;
-  volatile uint8_t *_sdaPortModeRegister;
-  volatile uint8_t *_sclPortModeRegister;
+  volatile uint8_t *_sdaPortReg;
+  volatile uint8_t *_sclPortReg;
+  volatile uint8_t *_sdaDirReg;
+  volatile uint8_t *_sclDirReg;
 
   // private methods
   void setPins(uint8_t sdaPin, uint8_t sclPin);
@@ -32,10 +34,10 @@ private:
   uint8_t i2c_readbit(void);
   void i2c_init(void);
   void i2c_start(void);
+  void i2c_repstart(void);
   void i2c_stop(void);
   uint8_t i2c_write( uint8_t c );
   uint8_t i2c_read( uint8_t ack );
-  
   
 public:
   // public methods
@@ -47,6 +49,12 @@ public:
   void send(uint8_t*, uint8_t);
   void send(int);
   void send(char*);
+
+  uint8_t requestFrom(int address);
+  uint8_t requestFrom(uint8_t address);
+  uint8_t receive( uint8_t ack );
+  uint8_t receive();
+  uint8_t receiveLast();
 
 };
 

@@ -28,7 +28,8 @@ static void BlinkM_beginWithPower(byte pwrpin, byte gndpin)
 static void BlinkM_sendCmd3( uint8_t addr, uint8_t c, uint8_t a1, uint8_t a2, uint8_t a3 )
 {
     if( i2c.beginTransmission( addr ) == 0 ) {
-        Serial.println( ++errcnt);
+        ++errcnt;
+        //Serial.println( errcnt);  // FIXME
     }    
     i2c.send( c );
     i2c.send( a1 );
@@ -36,10 +37,12 @@ static void BlinkM_sendCmd3( uint8_t addr, uint8_t c, uint8_t a1, uint8_t a2, ui
     i2c.send( a3 );
     i2c.endTransmission();
 }
+
 static void BlinkM_sendCmd1( uint8_t addr, uint8_t c, uint8_t a1)
 {
     if( i2c.beginTransmission( addr ) == 0 ) {
-        Serial.println( ++errcnt);
+        ++errcnt;
+        //Serial.println( errcnt); // FIXME
     }    
     i2c.send( c );
     i2c.send( a1 );
@@ -73,3 +76,34 @@ static void BlinkM_off(uint8_t addr)
     BlinkM_setFadeSpeed(addr,10);
     BlinkM_setRGB(addr, 0,0,0 );
 }
+
+// Gets the BlinkM firmware version
+static int BlinkM_getVersion(byte addr)
+{
+    i2c.beginTransmission( addr );
+    i2c.send( 'Z' );
+    i2c.endTransmission();
+
+    i2c.requestFrom( addr );  
+    uint8_t major_ver = i2c.receive();
+    uint8_t minor_ver = i2c.receiveLast();
+    i2c.endTransmission();
+    return (major_ver<<8) + minor_ver;
+}
+
+static void BlinkM_getRGBColor(byte addr, byte* r, byte* g, byte* b)
+{
+    i2c.beginTransmission(addr);
+    i2c.send('g');
+    i2c.endTransmission();
+    
+    i2c.requestFrom( addr );
+    *r = i2c.receive();
+    *g = i2c.receive();
+    *b = i2c.receiveLast();
+    i2c.endTransmission();
+}
+
+
+
+
