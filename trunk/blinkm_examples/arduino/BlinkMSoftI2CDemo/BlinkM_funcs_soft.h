@@ -14,7 +14,7 @@ static void BlinkM_begin()
     // nothing to do here yet
 }
 
-
+//
 static void BlinkM_beginWithPower(byte pwrpin, byte gndpin) 
 {
     pinMode(pwrpin, OUTPUT);
@@ -77,7 +77,7 @@ static void BlinkM_off(uint8_t addr)
     BlinkM_setRGB(addr, 0,0,0 );
 }
 
-// Gets the BlinkM firmware version
+// Get the BlinkM firmware version
 static int BlinkM_getVersion(byte addr)
 {
     i2c.beginTransmission( addr );
@@ -91,6 +91,7 @@ static int BlinkM_getVersion(byte addr)
     return (major_ver<<8) + minor_ver;
 }
 
+//
 static void BlinkM_getRGBColor(byte addr, byte* r, byte* g, byte* b)
 {
     i2c.beginTransmission(addr);
