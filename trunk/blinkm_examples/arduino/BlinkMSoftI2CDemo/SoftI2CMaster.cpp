@@ -24,30 +24,31 @@
 #define  I2C_ACK  1 
 #define  I2C_NAK  0
 
+
 #define i2c_scl_release()                 \
     *_sclDirReg     &=~ _sclBitMask
 #define i2c_sda_release()                 \
     *_sdaDirReg     &=~ _sdaBitMask
 
 // sets SDA low and drives output
-#define i2c_sda_lo()                      \
-    *_sdaPortReg    &=~ _sdaBitMask;      \  
-    *_sdaDirReg     |=  _sdaBitMask;  
+#define i2c_sda_lo()                                 \
+                     *_sdaPortReg  &=~ _sdaBitMask;  \
+                     *_sdaDirReg   |=  _sdaBitMask;  
 
 // sets SCL low and drives output
-#define i2c_scl_lo()                      \
-    *_sclPortReg    &=~ _sclBitMask;      \
-    *_sclDirReg     |=  _sclBitMask; 
+#define i2c_scl_lo()                                 \
+                     *_sclPortReg  &=~ _sclBitMask;  \
+                     *_sclDirReg   |=  _sclBitMask; 
 
 // set SDA high and to input (releases pin) (i.e. change to input,turnon pullup)
-#define i2c_sda_hi()                      \
-    *_sdaDirReg     &=~ _sdaBitMask;      \  
-    *_sdaPortReg    |=  _sdaBitMask;  
+#define i2c_sda_hi()                                 \
+                     *_sdaDirReg   &=~ _sdaBitMask;  \
+    if(usePullups) { *_sdaPortReg  |=  _sdaBitMask; } 
 
 // set SCL high and to input (releases)
-#define i2c_scl_hi()                      \
-    *_sclDirReg     &=~ _sclBitMask;      \
-    *_sclPortReg    |=  _sclBitMask; 
+#define i2c_scl_hi()                                 \
+                     *_sclDirReg   &=~ _sclBitMask;  \
+    if(usePullups) { *_sclPortReg  |=  _sclBitMask; } 
 
 
 
@@ -56,17 +57,26 @@
 //
 SoftI2CMaster::SoftI2CMaster(uint8_t sdaPin, uint8_t sclPin) 
 {
-    setPins(sdaPin, sclPin);
+    setPins(sdaPin, sclPin, true);
+    i2c_init();
+}
+
+//
+SoftI2CMaster::SoftI2CMaster(uint8_t sdaPin, uint8_t sclPin, boolean pullups)
+{
+    setPins(sdaPin, sclPin, pullups);
     i2c_init();
 }
 
 //
 // Turn Arduino pin numbers into PORTx, DDRx, and PINx
 //
-void SoftI2CMaster::setPins(uint8_t sdaPin, uint8_t sclPin)
+void SoftI2CMaster::setPins(uint8_t sdaPin, uint8_t sclPin, boolean pullups)
 {
     uint8_t port;
     
+    usePullups = pullups;
+
     _sdaPin = sdaPin;
     _sclPin = sclPin;
     
