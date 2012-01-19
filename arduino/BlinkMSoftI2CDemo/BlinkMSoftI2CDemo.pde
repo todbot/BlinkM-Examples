@@ -9,6 +9,7 @@
 
 const boolean testingI2CReads = true;
 
+// Choose any pins you want.  The pins below let you plug a BlinkM directly in
 const byte sclPin = 7;  // digital pin 7 wired to 'c' on BlinkM
 const byte sdaPin = 6;  // digital pin 6 wired to 'd' on BlinkM
 const byte pwrPin = 5;  // digital pin 5 wired to '+' on BlinkM
@@ -19,6 +20,7 @@ SoftI2CMaster i2c = SoftI2CMaster( sdaPin,sclPin );
 
 // must define "i2c" before including BlinkM_funcs_soft.h
 #include "BlinkM_funcs_soft.h"
+
 
 byte blinkm_addr = 9;
 

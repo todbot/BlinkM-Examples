@@ -31,7 +31,7 @@
 
 // sets SDA low and drives output
 #define i2c_sda_lo()                      \
-    *_sdaPortReg    &=~ _sdaBitMask;      \
+    *_sdaPortReg    &=~ _sdaBitMask;      \  
     *_sdaDirReg     |=  _sdaBitMask;  
 
 // sets SCL low and drives output
@@ -39,9 +39,9 @@
     *_sclPortReg    &=~ _sclBitMask;      \
     *_sclDirReg     |=  _sclBitMask; 
 
-// set SDA high and to input (releases)
+// set SDA high and to input (releases pin) (i.e. change to input,turnon pullup)
 #define i2c_sda_hi()                      \
-    *_sdaDirReg     &=~ _sdaBitMask;      \
+    *_sdaDirReg     &=~ _sdaBitMask;      \  
     *_sdaPortReg    |=  _sdaBitMask;  
 
 // set SCL high and to input (releases)
@@ -56,10 +56,8 @@
 //
 SoftI2CMaster::SoftI2CMaster(uint8_t sdaPin, uint8_t sclPin) 
 {
-  setPins(sdaPin, sclPin);
-
-  i2c_init();
-
+    setPins(sdaPin, sclPin);
+    i2c_init();
 }
 
 //
@@ -67,22 +65,21 @@ SoftI2CMaster::SoftI2CMaster(uint8_t sdaPin, uint8_t sclPin)
 //
 void SoftI2CMaster::setPins(uint8_t sdaPin, uint8_t sclPin)
 {
-  uint8_t port;
-
-  _sdaPin = sdaPin;
-  _sclPin = sclPin;
-
-  _sdaBitMask = digitalPinToBitMask(sdaPin);
-  _sclBitMask = digitalPinToBitMask(sclPin);
-
-  port = digitalPinToPort(sdaPin);
-  _sdaPortReg  = portOutputRegister(port);
-  _sdaDirReg   = portModeRegister(port);
-
-  port = digitalPinToPort(sclPin);
-  _sclPortReg  = portOutputRegister(port);
-  _sclDirReg   = portModeRegister(port);
-
+    uint8_t port;
+    
+    _sdaPin = sdaPin;
+    _sclPin = sclPin;
+    
+    _sdaBitMask = digitalPinToBitMask(sdaPin);
+    _sclBitMask = digitalPinToBitMask(sclPin);
+    
+    port = digitalPinToPort(sdaPin);
+    _sdaPortReg  = portOutputRegister(port);
+    _sdaDirReg   = portModeRegister(port);
+    
+    port = digitalPinToPort(sclPin);
+    _sclPortReg  = portOutputRegister(port);
+    _sclDirReg   = portModeRegister(port);
 }
 
 //
@@ -90,28 +87,28 @@ void SoftI2CMaster::setPins(uint8_t sdaPin, uint8_t sclPin)
 //
 uint8_t SoftI2CMaster::beginTransmission(uint8_t address)
 {
-  i2c_start();
-  uint8_t rc = i2c_write((address<<1) | 0); // clr read bit
-  return rc;
+    i2c_start();
+    uint8_t rc = i2c_write((address<<1) | 0); // clr read bit
+    return rc;
 }
 
 //
 uint8_t SoftI2CMaster::requestFrom(uint8_t address)
 {
-  i2c_start();
-  uint8_t rc = i2c_write((address<<1) | 1); // set read bit
-  return rc;
+    i2c_start();
+    uint8_t rc = i2c_write((address<<1) | 1); // set read bit
+    return rc;
 }
 //
 uint8_t SoftI2CMaster::requestFrom(int address)
 {
-  return requestFrom( (uint8_t) address);
+    return requestFrom( (uint8_t) address);
 }
 
 //
 uint8_t SoftI2CMaster::beginTransmission(int address)
 {
-  return beginTransmission((uint8_t)address);
+    return beginTransmission((uint8_t)address);
 }
 
 //
@@ -119,9 +116,9 @@ uint8_t SoftI2CMaster::beginTransmission(int address)
 //
 uint8_t SoftI2CMaster::endTransmission(void)
 {
-  i2c_stop();
-  //return ret;  // FIXME
-  return 0;
+    i2c_stop();
+    //return ret;  // FIXME
+    return 0;
 }
 
 // must be called in:
@@ -129,7 +126,7 @@ uint8_t SoftI2CMaster::endTransmission(void)
 // or after beginTransmission(address)
 uint8_t SoftI2CMaster::send(uint8_t data)
 {
-  return i2c_write(data);
+    return i2c_write(data);
 }
 
 // must be called in:
@@ -137,9 +134,9 @@ uint8_t SoftI2CMaster::send(uint8_t data)
 // or after beginTransmission(address)
 void SoftI2CMaster::send(uint8_t* data, uint8_t quantity)
 {
-  for(uint8_t i = 0; i < quantity; ++i){
-    send(data[i]);
-  }
+    for(uint8_t i = 0; i < quantity; ++i){
+        send(data[i]);
+    }
 }
 
 // must be called in:
@@ -147,7 +144,7 @@ void SoftI2CMaster::send(uint8_t* data, uint8_t quantity)
 // or after beginTransmission(address)
 void SoftI2CMaster::send(char* data)
 {
-  send((uint8_t*)data, strlen(data));
+    send((uint8_t*)data, strlen(data));
 }
 
 // must be called in:
@@ -155,7 +152,7 @@ void SoftI2CMaster::send(char* data)
 // or after beginTransmission(address)
 void SoftI2CMaster::send(int data)
 {
-  send((uint8_t)data);
+    send((uint8_t)data);
 }
 
 //--------------------------------------------------------------------
