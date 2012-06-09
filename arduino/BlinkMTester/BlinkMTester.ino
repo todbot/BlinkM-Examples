@@ -101,7 +101,8 @@ void setup()
   else
     BlinkM_begin();
 
-  delay(1000); // wait a bit for things to stabilize
+  delay(100); // wait a bit for things to stabilize
+  BlinkM_off(0);  // turn everyone off
 
   //BlinkM_setAddress( blinkm_addr );  // uncomment to set address
     

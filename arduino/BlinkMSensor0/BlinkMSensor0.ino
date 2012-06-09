@@ -34,7 +34,7 @@ void loop() {
     // read the value from the sensor:
     sensorValue = analogRead(sensorPin); 
     Serial.println(sensorValue);
-    grnVal = sensorValue/4;  // sensor ranges from 0-1023, colors from 0-255
-    BlinkM_fadeToRGB( blinkm_addr, redVal, grnVal, bluVal);
+    //grnVal = sensorValue/4;  // sensor ranges from 0-1023, colors from 0-255
+    BlinkM_fadeToHSB( blinkm_addr, sensorValue, 255, 255);
     delay(100);                  
 }

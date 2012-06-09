@@ -27,10 +27,10 @@ private:
   volatile uint8_t *_sdaDirReg;
   volatile uint8_t *_sclDirReg;
 
-  boolean usePullups;
-
+  uint8_t usePullups;
+  
   // private methods
-  void setPins(uint8_t sdaPin, uint8_t sclPin, boolean usePullups);
+  void setPins(uint8_t sdaPin, uint8_t sclPin, uint8_t usePullups);
 
   void i2c_writebit( uint8_t c );
   uint8_t i2c_readbit(void);
@@ -44,7 +44,7 @@ private:
 public:
   // public methods
   SoftI2CMaster(uint8_t sdaPin, uint8_t sclPin);
-  SoftI2CMaster(uint8_t sdaPin, uint8_t sclPin, boolean usePullups);
+  SoftI2CMaster(uint8_t sdaPin, uint8_t sclPin, uint8_t usePullups);
 
   uint8_t beginTransmission(uint8_t address);
   uint8_t beginTransmission(int address);

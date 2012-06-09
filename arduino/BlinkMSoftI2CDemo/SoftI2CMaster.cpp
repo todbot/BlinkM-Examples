@@ -14,7 +14,7 @@
 #include <WProgram.h>
 #endif
 
-#include "SoftI2CMaster.h"
+#include "./SoftI2CMaster.h"
 
 #include <util/delay.h>
 #include <string.h>
@@ -62,7 +62,7 @@ SoftI2CMaster::SoftI2CMaster(uint8_t sdaPin, uint8_t sclPin)
 }
 
 //
-SoftI2CMaster::SoftI2CMaster(uint8_t sdaPin, uint8_t sclPin, boolean pullups)
+SoftI2CMaster::SoftI2CMaster(uint8_t sdaPin, uint8_t sclPin, uint8_t pullups)
 {
     setPins(sdaPin, sclPin, pullups);
     i2c_init();
@@ -71,7 +71,7 @@ SoftI2CMaster::SoftI2CMaster(uint8_t sdaPin, uint8_t sclPin, boolean pullups)
 //
 // Turn Arduino pin numbers into PORTx, DDRx, and PINx
 //
-void SoftI2CMaster::setPins(uint8_t sdaPin, uint8_t sclPin, boolean pullups)
+void SoftI2CMaster::setPins(uint8_t sdaPin, uint8_t sclPin, uint8_t pullups)
 {
     uint8_t port;
     
