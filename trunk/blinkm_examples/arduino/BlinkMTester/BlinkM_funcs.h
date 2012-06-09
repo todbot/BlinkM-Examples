@@ -65,7 +65,7 @@ static void BlinkM_scanI2CBus(byte from, byte to,
   byte rc;
   byte data = 0; // not used, just an address to feed to twi_writeTo()
   for( byte addr = from; addr <= to; addr++ ) {
-    rc = twi_writeTo(addr, &data, 0, 1);
+    rc = twi_writeTo(addr, &data, 0, 1, 0 );
     callback( addr, rc );
   }
 }
@@ -77,7 +77,7 @@ static int8_t BlinkM_findFirstI2CDevice()
   byte rc;
   byte data = 0; // not used, just an address to feed to twi_writeTo()
   for( byte addr=1; addr < 120; addr++ ) {  // only scan addrs 1-120
-    rc = twi_writeTo(addr, &data, 0, 1);
+    rc = twi_writeTo(addr, &data, 0, 1, 0);
     if( rc == 0 ) return addr; // found an address
   }
   return -1; // no device found in range given

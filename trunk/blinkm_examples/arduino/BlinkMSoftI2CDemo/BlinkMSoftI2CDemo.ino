@@ -15,7 +15,7 @@ const byte sdaPin = 6;  // digital pin 6 wired to 'd' on BlinkM
 const byte pwrPin = 5;  // digital pin 5 wired to '+' on BlinkM
 const byte gndPin = 4;  // digital pin 4 wired to '-' on BlinkM
 
-#include "SoftI2CMaster.h"
+#include "./SoftI2CMaster.h"
 SoftI2CMaster i2c = SoftI2CMaster( sdaPin,sclPin );
 // or if you want to use your own external pullup resistors
 //SoftI2CMaster i2c = SoftI2CMaster( sdaPin,sclPin, false );
