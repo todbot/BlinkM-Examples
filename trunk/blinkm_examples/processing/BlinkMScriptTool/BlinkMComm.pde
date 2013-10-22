@@ -45,8 +45,10 @@ public class BlinkMComm {
   // this can't be static as a .pde, sigh.
   public String[] listPorts() {
       String[] a = Serial.list();
+      if( a.length == 0 ) a = new String[]{"-no serial ports-"};
       String osname = System.getProperty("os.name");
-      if( osname.toLowerCase().startsWith("windows") ) {
+      if( osname.toLowerCase().startsWith("windows") && a.length > 1 ) {
+          debug("here");
           // reverse list because Arduino is almost always highest COM port
           for(int i=0;i<a.length/2;i++) {
               String t = a[i]; a[i] = a[a.length-(1+i)]; a[a.length-(1+i)] = t;
