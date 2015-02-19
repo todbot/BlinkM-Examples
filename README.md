@@ -60,6 +60,11 @@ Arduino Examples
 - WiFiBlinkM
   - Control a BlinkM using a YellowJacket or WiShield WiFi module
 
+- TweetM
+  - The code and design docs for <a href="http://tweetm.thingm.com/">TweetM</a> gadget
+    as seen on <a href="http://www.colbertnation.com/the-colbert-report-videos/311944/june-08-2010/mark-frauenfelder">The Colbert Report</a> live here.
+
+
 
 Processing Examples
 -------------------
