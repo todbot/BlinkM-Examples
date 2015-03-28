@@ -1,7 +1,7 @@
 /*
  * BlinkMCommunicator -- Communication gateway between a computer and a BlinkM
  *                       Essentially turns an Arduino to an I2C<->serial adapter
- *
+ * 
  * Command format is:
  * pos description
  *  0   <startbyte>
