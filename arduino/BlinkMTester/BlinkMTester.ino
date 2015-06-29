@@ -57,20 +57,11 @@ const char helpstr[] PROGMEM =
 //const char badAddrStr[] PROGMEM = 
 //  "BlinkM not at expected address.  Reset address with 'A' command\n";
 
-// There are cases where we can't use the obvious Serial.println(str) because
-// the string is PROGMEM and Serial doesn't know how to deal with that
-// (we store strings in PROGMEM instead of normal RAM to save RAM space)
-void printProgStr(const prog_char str[])
-{
-  char c;
-  if(!str) return;
-  while((c = pgm_read_byte(str++)))
-    Serial.write(c);
-}
-
 void help()
 {
-  printProgStr( helpstr );
+ for( int i=0; i<strlen(helpstr); i++ ) {
+    Serial.print( (char) pgm_read_byte(helpstr+i) );
+  }
 }
 
 // called when address is found in BlinkM_scanI2CBus()
