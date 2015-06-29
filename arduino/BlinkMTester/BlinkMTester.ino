@@ -27,7 +27,7 @@
 // set this if you're plugging a BlinkM directly into an Arduino,
 // into the standard position on analog in pins 2,3,4,5
 // otherwise you can set it to false or just leave it alone
-const boolean BLINKM_ARDUINO_POWERED = true;
+const boolean BLINKM_ARDUINO_POWERED = false;
 
 byte blinkm_addr = 0x09; // the default address of all BlinkMs
 
@@ -96,7 +96,8 @@ void setup()
   BlinkM_off(0);  // turn everyone off
 
   //BlinkM_setAddress( blinkm_addr );  // uncomment to set address
-    
+  delay(1000);
+  
   Serial.begin(19200);
 
   help();
