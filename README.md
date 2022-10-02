@@ -18,6 +18,8 @@ you would like added to this example set, contact us!
 Arduino Examples
 ----------------
 
+**Note: A more up-to-date and useful BlinkM Arduino library that includes these examples is available at https://github.com/todbot/BlinkM-Arduino**
+
 - BlinkMCommunicator 
   - A simple serial-to-i2c gateway for PC controlling of BlinkM,
     like via Processing or BlinkMSequencer
